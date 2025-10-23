@@ -1,5 +1,7 @@
 # SAP IDoc Simulator
 
+> ✅ **Successfully tested:** 100 IDoc messages sent to Event Hub using Entra ID authentication (394 KB, 9.86s, 608 msg/min)
+
 ## Overview
 
 Python-based simulator for generating realistic SAP IDoc messages for 3PL (Third-Party Logistics) scenarios. Publishes messages directly to Azure Event Hubs for ingestion into Microsoft Fabric Eventstream.
