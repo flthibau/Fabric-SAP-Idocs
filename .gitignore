@@ -1,0 +1,164 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+ENV/
+env/
+.venv
+
+# Virtual environments
+.virtualenv
+*.env
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Azure Functions
+local.settings.json
+.python_packages/
+__blobstorage__/
+__queues__/
+__azurite_db*__.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Bicep
+*.bicep.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Secrets
+secrets/
+*.key
+*.pem
+*.pfx
+*.p12
+appsettings.Development.json
+appsettings.local.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.coverage
+.pytest_cache/
+coverage/
+*.cover
+*.py,cover
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Documentation
+site/
+.cache/
+
+# Backup files
+*.bak
+*.swp
+*.swo
+*~
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificates
+*.crt
+*.cer
+
+# Docker
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build outputs
+*.dll
+*.exe
+*.out
+*.app
+
+# Azure
+.azure/

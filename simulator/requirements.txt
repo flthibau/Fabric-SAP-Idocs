@@ -1,0 +1,22 @@
+# Azure SDK
+azure-eventhub>=5.11.0
+azure-identity>=1.15.0
+
+# Data generation and validation
+faker>=20.0.0
+pydantic>=2.5.0
+
+# Configuration
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+
+# Logging and monitoring
+python-json-logger>=2.0.7
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Utilities
+python-dateutil>=2.8.2
