@@ -82,7 +82,7 @@ async def run_simulator(config: Dict[str, Any]):
     # Initialize IDoc generator
     generator = IDocGenerator(
         sap_system=sap_config.get("system_id", "S4HPRD"),
-        sap_client=sap_config.get("client", "100"),
+        sap_client=str(sap_config.get("client", "100")),  # Ensure string type
         warehouse_count=master_data_config.get("warehouse_count", 5),
         customer_count=master_data_config.get("customer_count", 100),
         carrier_count=master_data_config.get("carrier_count", 20)
@@ -92,7 +92,12 @@ async def run_simulator(config: Dict[str, Any]):
     publisher = None
     if not simulator_config.get("dry_run", False):
         try:
-            if eventhub_config.get("use_azure_credential", False):
+            # Convert string "true"/"false" to boolean
+            use_azure_cred = eventhub_config.get("use_azure_credential", False)
+            if isinstance(use_azure_cred, str):
+                use_azure_cred = use_azure_cred.lower() in ('true', '1', 'yes')
+            
+            if use_azure_cred:
                 publisher = EventStreamPublisher(
                     namespace=eventhub_config.get("namespace"),
                     eventhub_name=eventhub_config.get("eventhub_name"),

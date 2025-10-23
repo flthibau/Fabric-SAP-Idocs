@@ -47,11 +47,22 @@ class EventStreamPublisher:
             logger.info(f"Initialized Event Hub producer with Azure AD auth: {fully_qualified_namespace}/{eventhub_name}")
         elif connection_string:
             # Use connection string authentication
-            self.producer = EventHubProducerClient.from_connection_string(
-                conn_str=connection_string,
-                eventhub_name=eventhub_name
-            )
-            logger.info(f"Initialized Event Hub producer with connection string: {eventhub_name}")
+            # Check if EntityPath is already in connection string
+            if "EntityPath=" in connection_string:
+                # Don't pass eventhub_name if EntityPath is already specified
+                self.producer = EventHubProducerClient.from_connection_string(
+                    conn_str=connection_string
+                )
+                # Extract eventhub_name from EntityPath for logging
+                entity_path = connection_string.split("EntityPath=")[1].split(";")[0]
+                logger.info(f"Initialized Event Hub producer with connection string: {entity_path}")
+            else:
+                # Pass eventhub_name separately
+                self.producer = EventHubProducerClient.from_connection_string(
+                    conn_str=connection_string,
+                    eventhub_name=eventhub_name
+                )
+                logger.info(f"Initialized Event Hub producer with connection string: {eventhub_name}")
         else:
             raise ValueError("Either connection_string or (namespace + use_azure_credential) must be provided")
         
