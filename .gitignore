@@ -100,6 +100,11 @@ secrets/
 appsettings.Development.json
 appsettings.local.json
 
+# Configuration files with secrets
+simulator/config/config.yaml
+infrastructure/DEPLOYMENT_SUMMARY.md
+infrastructure/scripts/DEPLOYMENT_SUMMARY.md
+
 # Logs
 logs/
 *.log
