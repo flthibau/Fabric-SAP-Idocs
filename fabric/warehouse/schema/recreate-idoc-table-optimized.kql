@@ -1,0 +1,84 @@
+// ===================================================================
+// RECRÉATION TABLE IDOC_RAW - Version optimisée
+// ===================================================================
+// Ce script supprime et recrée la table avec la structure correcte
+// pour utiliser directement les colonnes auto-créées par Event Hub
+
+// 1. SUPPRIMER l'ancienne table
+.drop table idoc_raw ifexists
+
+// 2. CRÉER la nouvelle table avec colonnes optimisées
+.create table idoc_raw (
+    // Colonnes principales du message IDoc
+    idoc_type: string,
+    message_type: string,
+    sap_system: string,
+    timestamp: datetime,
+    
+    // Données de contrôle et segments (dynamic JSON)
+    control: dynamic,
+    data: dynamic,
+    
+    // Métadonnées Event Hub (auto-ajoutées)
+    EventProcessedUtcTime: datetime,
+    PartitionId: string,
+    EventEnqueuedUtcTime: datetime
+)
+
+// 3. ACTIVER le streaming ingestion
+.alter table idoc_raw policy streamingingestion enable
+
+// 4. CONFIGURER la rétention (90 jours)
+.alter table idoc_raw policy retention 
+```
+{
+    "SoftDeletePeriod": "90.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+// 5. CRÉER les fonctions helper optimisées
+.create-or-alter function GetIDocNumber(controlData: dynamic) {
+    tostring(controlData.docnum)
+}
+
+.create-or-alter function GetIDocSegments(dataObj: dynamic) {
+    dataObj
+}
+
+.create-or-alter function ParseIDocHeader(controlData: dynamic) {
+    pack(
+        "docnum", tostring(controlData.docnum),
+        "status", tostring(controlData.status),
+        "direction", tostring(controlData.direct),
+        "sender", tostring(controlData.sndprn),
+        "receiver", tostring(controlData.rcvprn),
+        "created_date", tostring(controlData.credat),
+        "created_time", tostring(controlData.cretim)
+    )
+}
+
+// 6. CRÉER une vue matérialisée pour requêtes fréquentes
+.create materialized-view with (backfill=true) IDocSummary on table idoc_raw
+{
+    idoc_raw
+    | extend IDocNumber = GetIDocNumber(control)
+    | extend Header = ParseIDocHeader(control)
+    | project 
+        timestamp,
+        idoc_type,
+        message_type,
+        sap_system,
+        IDocNumber,
+        Header,
+        EventProcessedUtcTime,
+        PartitionId
+}
+
+// 7. CRÉER des index pour performance
+.alter table idoc_raw policy caching hot = 7d
+
+print "✓ Table idoc_raw recréée avec succès"
+print "✓ Streaming ingestion activé"
+print "✓ Vue matérialisée IDocSummary créée"
+print "✓ Rétention configurée: 90 jours"

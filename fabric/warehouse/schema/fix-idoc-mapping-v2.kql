@@ -1,0 +1,27 @@
+// Alternative mapping - Eventstream peut encapsuler les données différemment
+// Essai 1: Les données sont peut-être dans Body ou Data
+
+.drop table idoc_raw ingestion json mapping "idoc_raw_mapping" ifexists
+
+// Mapping pour structure Event Hub standard
+.create table idoc_raw ingestion json mapping "idoc_raw_mapping"
+```
+[
+    {"column": "EventTimestamp", "path": "$.EventEnqueuedUtcTime", "datatype": "datetime", "transform": null},
+    {"column": "EventHub", "path": "$.EventHubName", "datatype": "string", "transform": null},
+    {"column": "PartitionId", "path": "$.PartitionId", "datatype": "int", "transform": null},
+    {"column": "SequenceNumber", "path": "$.SequenceNumber", "datatype": "long", "transform": null},
+    {"column": "Offset", "path": "$.Offset", "datatype": "string", "transform": null},
+    {"column": "IDocType", "path": "$.idoc_type", "datatype": "string", "transform": null},
+    {"column": "IDocNumber", "path": "$.control.docnum", "datatype": "string", "transform": null},
+    {"column": "MessageType", "path": "$.message_type", "datatype": "string", "transform": null},
+    {"column": "Direction", "path": "$.control.direction", "datatype": "string", "transform": null},
+    {"column": "SenderSystem", "path": "$.control.sndprn", "datatype": "string", "transform": null},
+    {"column": "ReceiverSystem", "path": "$.control.rcvprn", "datatype": "string", "transform": null},
+    {"column": "CreatedDate", "path": "$.control.credat", "datatype": "datetime", "transform": null},
+    {"column": "Status", "path": "$.control.status", "datatype": "string", "transform": null},
+    {"column": "Priority", "path": "$.control.priority", "datatype": "int", "transform": null},
+    {"column": "Segments", "path": "$.data", "datatype": "dynamic", "transform": null},
+    {"column": "RawPayload", "path": "$", "datatype": "dynamic", "transform": null}
+]
+```

@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import signal
+import argparse
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any
@@ -63,12 +64,13 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
         raise
 
 
-async def run_simulator(config: Dict[str, Any]):
+async def run_simulator(config: Dict[str, Any], message_count: int = None):
     """
     Main simulator loop
     
     Args:
         config: Configuration dictionary
+        message_count: Optional number of messages to send before stopping
     """
     global shutdown_flag
     
@@ -135,19 +137,35 @@ async def run_simulator(config: Dict[str, Any]):
     sample_rate = monitoring_config.get("sample_rate", 0.1)
     
     logger.info(f"Starting IDoc simulator - Rate: {message_rate} msg/min, Batch size: {batch_size}")
-    logger.info(f"Run duration: {run_duration}s ({'continuous' if run_duration == 0 else f'{run_duration/3600:.1f} hours'})")
+    if message_count:
+        logger.info(f"Target: {message_count} messages")
+    else:
+        logger.info(f"Run duration: {run_duration}s ({'continuous' if run_duration == 0 else f'{run_duration/3600:.1f} hours'})")
     
     try:
         while not shutdown_flag:
+            # Check message count limit
+            if message_count and total_messages >= message_count:
+                logger.info(f"Target message count of {message_count} reached. Stopping simulator.")
+                break
+            
             # Check run duration
             elapsed_time = time.time() - start_time
             if run_duration > 0 and elapsed_time >= run_duration:
                 logger.info(f"Run duration of {run_duration}s reached. Stopping simulator.")
                 break
             
+            # Adjust batch size if needed to not exceed message_count
+            current_batch_size = batch_size
+            if message_count:
+                remaining = message_count - total_messages
+                current_batch_size = min(batch_size, remaining)
+                if current_batch_size <= 0:
+                    break
+            
             # Generate batch of IDocs
             batch_start = time.time()
-            idocs = generator.generate_mixed_batch(batch_size)
+            idocs = generator.generate_mixed_batch(current_batch_size)
             batch_gen_time = time.time() - batch_start
             
             # Print sample messages
@@ -229,6 +247,21 @@ async def run_simulator(config: Dict[str, Any]):
 
 def main():
     """Main entry point"""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="SAP IDoc Simulator for Microsoft Fabric")
+    parser.add_argument(
+        "--count",
+        type=int,
+        help="Number of messages to send before stopping (overrides config duration)"
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config/config.yaml",
+        help="Path to configuration file (default: config/config.yaml)"
+    )
+    args = parser.parse_args()
+    
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -240,10 +273,10 @@ def main():
     
     try:
         # Load configuration
-        config = load_config()
+        config = load_config(args.config)
         
         # Run simulator
-        asyncio.run(run_simulator(config))
+        asyncio.run(run_simulator(config, message_count=args.count))
         
     except Exception as e:
         logger.error(f"Fatal error: {str(e)}", exc_info=True)

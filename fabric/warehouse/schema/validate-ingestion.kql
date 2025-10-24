@@ -1,0 +1,39 @@
+// Requêtes de validation pour vérifier l'ingestion des IDocs
+
+// 1. Compter le total de messages reçus
+idoc_raw 
+| count
+
+// 2. Afficher les 10 derniers messages
+idoc_raw 
+| top 10 by EventTimestamp desc
+| project EventTimestamp, IDocType, IDocNumber, MessageType, SenderSystem, ReceiverSystem, Status
+
+// 3. Compter par type d'IDoc
+idoc_raw 
+| summarize Count=count() by IDocType
+| order by Count desc
+
+// 4. Compter par type de message
+idoc_raw 
+| summarize Count=count() by MessageType
+| order by Count desc
+
+// 5. Vérifier les timestamps (doivent être récents)
+idoc_raw 
+| summarize 
+    FirstMessage = min(EventTimestamp),
+    LastMessage = max(EventTimestamp),
+    TotalCount = count()
+
+// 6. Vérifier un message complet (voir tous les champs)
+idoc_raw 
+| take 1
+
+// 7. Utiliser les fonctions helper créées
+GetRecentIDocs(1) // IDocs de la dernière heure
+
+// 8. Vérifier les segments (données détaillées)
+idoc_raw
+| take 1
+| project IDocType, IDocNumber, Segments

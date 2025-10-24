@@ -1,0 +1,89 @@
+// Create idoc_raw table for SAP IDoc ingestion
+// Table structure for receiving JSON IDoc messages from Event Hub via Eventstream
+
+.create table idoc_raw (
+    EventTimestamp: datetime,
+    EventHub: string,
+    PartitionId: int,
+    SequenceNumber: long,
+    Offset: string,
+    IDocType: string,
+    IDocNumber: string,
+    MessageType: string,
+    Direction: string,
+    SenderSystem: string,
+    ReceiverSystem: string,
+    CreatedDate: datetime,
+    Status: string,
+    Priority: int,
+    Segments: dynamic,
+    RawPayload: dynamic
+)
+
+// Alternative: Simple schema if Eventstream auto-detection is preferred
+// .create table idoc_raw (
+//     data: dynamic
+// )
+
+// Enable streaming ingestion
+.alter table idoc_raw policy streamingingestion enable
+
+// Create JSON mapping for structured ingestion
+.create table idoc_raw ingestion json mapping "idoc_raw_mapping"
+```
+[
+    {"column": "EventTimestamp", "path": "$.eventTimestamp", "datatype": "datetime"},
+    {"column": "EventHub", "path": "$.eventHub", "datatype": "string"},
+    {"column": "PartitionId", "path": "$.partitionId", "datatype": "int"},
+    {"column": "SequenceNumber", "path": "$.sequenceNumber", "datatype": "long"},
+    {"column": "Offset", "path": "$.offset", "datatype": "string"},
+    {"column": "IDocType", "path": "$.idocType", "datatype": "string"},
+    {"column": "IDocNumber", "path": "$.idocNumber", "datatype": "string"},
+    {"column": "MessageType", "path": "$.messageType", "datatype": "string"},
+    {"column": "Direction", "path": "$.direction", "datatype": "string"},
+    {"column": "SenderSystem", "path": "$.senderSystem", "datatype": "string"},
+    {"column": "ReceiverSystem", "path": "$.receiverSystem", "datatype": "string"},
+    {"column": "CreatedDate", "path": "$.createdDate", "datatype": "datetime"},
+    {"column": "Status", "path": "$.status", "datatype": "string"},
+    {"column": "Priority", "path": "$.priority", "datatype": "int"},
+    {"column": "Segments", "path": "$.segments", "datatype": "dynamic"},
+    {"column": "RawPayload", "path": "$", "datatype": "dynamic"}
+]
+```
+
+// Set retention policy (90 days)
+.alter-merge table idoc_raw policy retention softdelete = 90d
+
+// Create views for common queries
+.create-or-alter function with (folder = "IDoc", docstring = "Get recent IDocs") GetRecentIDocs(hours:int = 24) {
+    idoc_raw
+    | where EventTimestamp > ago(hours * 1h)
+    | order by EventTimestamp desc
+}
+
+.create-or-alter function with (folder = "IDoc", docstring = "Get IDocs by type") GetIDocsByType(docType:string) {
+    idoc_raw
+    | where IDocType == docType
+    | order by EventTimestamp desc
+}
+
+.create-or-alter function with (folder = "IDoc", docstring = "Get failed IDocs") GetFailedIDocs() {
+    idoc_raw
+    | where Status == "ERROR" or Status == "FAILED"
+    | order by EventTimestamp desc
+}
+
+// Sample queries
+// Get count by IDoc type
+// idoc_raw
+// | summarize Count=count() by IDocType
+// | order by Count desc
+
+// Get latest 10 IDocs
+// idoc_raw
+// | top 10 by EventTimestamp desc
+
+// Get IDocs for specific message type
+// idoc_raw
+// | where MessageType == "ORDERS"
+// | order by EventTimestamp desc

@@ -1,0 +1,65 @@
+// ===================================================================
+// DIAGNOSTIC MAPPING - Inspection des données reçues
+// ===================================================================
+// À utiliser après le redémarrage de VS Code avec le serveur MCP
+// Pour exécuter via Copilot: "Exécute la requête de diagnostic mapping"
+
+// 1. Vérifier que des données sont reçues
+.show table idoc_raw extents
+| summarize TotalRecords=sum(RowCount), TotalSize=sum(OriginalSize)
+
+// 2. Examiner un message brut pour comprendre sa structure
+idoc_raw
+| take 1
+| project RawPayload
+
+// 3. Vérifier quelles colonnes sont remplies
+idoc_raw
+| take 10
+| project 
+    EventTimestamp,
+    IDocType,
+    MessageType,
+    IDocNumber,
+    SenderSystem,
+    PartitionId,
+    SequenceNumber
+
+// 4. Compter les valeurs NULL par colonne
+idoc_raw
+| summarize 
+    TotalRows = count(),
+    EventTimestamp_Nulls = countif(isnull(EventTimestamp)),
+    IDocType_Nulls = countif(isnull(IDocType)),
+    MessageType_Nulls = countif(isnull(MessageType)),
+    IDocNumber_Nulls = countif(isnull(IDocNumber)),
+    SenderSystem_Nulls = countif(isnull(SenderSystem)),
+    PartitionId_Nulls = countif(isnull(PartitionId))
+
+// 5. Parser manuellement le JSON pour voir la structure réelle
+idoc_raw
+| take 1
+| extend ParsedPayload = parse_json(RawPayload)
+| project 
+    ParsedPayload,
+    idoc_type = ParsedPayload.idoc_type,
+    message_type = ParsedPayload.message_type,
+    timestamp = ParsedPayload.timestamp,
+    control = ParsedPayload.control,
+    data = ParsedPayload.data
+
+// 6. Tester si les champs existent dans le JSON brut
+idoc_row
+| take 5
+| extend 
+    HasIdocType = RawPayload contains "idoc_type",
+    HasMessageType = RawPayload contains "message_type",
+    HasTimestamp = RawPayload contains "timestamp",
+    HasControl = RawPayload contains "control"
+| project 
+    PartitionId,
+    HasIdocType,
+    HasMessageType,
+    HasTimestamp,
+    HasControl,
+    RawPayload
