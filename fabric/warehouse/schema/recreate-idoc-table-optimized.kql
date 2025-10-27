@@ -1,34 +1,34 @@
 // ===================================================================
-// RECRÉATION TABLE IDOC_RAW - Version optimisée
+// RECREATE IDOC_RAW TABLE - Optimized version
 // ===================================================================
-// Ce script supprime et recrée la table avec la structure correcte
-// pour utiliser directement les colonnes auto-créées par Event Hub
+// This script drops and recreates the table with the correct structure
+// to directly use auto-created columns from Event Hub
 
-// 1. SUPPRIMER l'ancienne table
+// 1. DROP the old table
 .drop table idoc_raw ifexists
 
-// 2. CRÉER la nouvelle table avec colonnes optimisées
+// 2. CREATE the new table with optimized columns
 .create table idoc_raw (
-    // Colonnes principales du message IDoc
+    // Main IDoc message columns
     idoc_type: string,
     message_type: string,
     sap_system: string,
     timestamp: datetime,
     
-    // Données de contrôle et segments (dynamic JSON)
+    // Control data and segments (dynamic JSON)
     control: dynamic,
     data: dynamic,
     
-    // Métadonnées Event Hub (auto-ajoutées)
+    // Event Hub metadata (auto-added)
     EventProcessedUtcTime: datetime,
     PartitionId: string,
     EventEnqueuedUtcTime: datetime
 )
 
-// 3. ACTIVER le streaming ingestion
+// 3. ENABLE streaming ingestion
 .alter table idoc_raw policy streamingingestion enable
 
-// 4. CONFIGURER la rétention (90 jours)
+// 4. CONFIGURE retention (90 days)
 .alter table idoc_raw policy retention 
 ```
 {
@@ -37,7 +37,7 @@
 }
 ```
 
-// 5. CRÉER les fonctions helper optimisées
+// 5. CREATE optimized helper functions
 .create-or-alter function GetIDocNumber(controlData: dynamic) {
     tostring(controlData.docnum)
 }
@@ -58,7 +58,7 @@
     )
 }
 
-// 6. CRÉER une vue matérialisée pour requêtes fréquentes
+// 6. CREATE materialized view for frequent queries
 .create materialized-view with (backfill=true) IDocSummary on table idoc_raw
 {
     idoc_raw
@@ -75,10 +75,10 @@
         PartitionId
 }
 
-// 7. CRÉER des index pour performance
+// 7. CREATE indexes for performance
 .alter table idoc_raw policy caching hot = 7d
 
-print "✓ Table idoc_raw recréée avec succès"
-print "✓ Streaming ingestion activé"
-print "✓ Vue matérialisée IDocSummary créée"
-print "✓ Rétention configurée: 90 jours"
+print "✓ Table idoc_raw recreated successfully"
+print "✓ Streaming ingestion enabled"
+print "✓ Materialized view IDocSummary created"
+print "✓ Retention configured: 90 days"

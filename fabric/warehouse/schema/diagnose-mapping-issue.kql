@@ -1,65 +1,59 @@
 // ===================================================================
-// DIAGNOSTIC MAPPING - Inspection des données reçues
+// MAPPING DIAGNOSTIC - Inspect received data
 // ===================================================================
-// À utiliser après le redémarrage de VS Code avec le serveur MCP
-// Pour exécuter via Copilot: "Exécute la requête de diagnostic mapping"
+// To use after VS Code restart with MCP server
+// To execute via Copilot: "Execute mapping diagnostic query"
 
-// 1. Vérifier que des données sont reçues
+// 1. Verify data is being received
 .show table idoc_raw extents
 | summarize TotalRecords=sum(RowCount), TotalSize=sum(OriginalSize)
 
-// 2. Examiner un message brut pour comprendre sa structure
+// 2. Examine raw message to understand structure
 idoc_raw
 | take 1
-| project RawPayload
 
-// 3. Vérifier quelles colonnes sont remplies
+// 3. Check which columns are populated
 idoc_raw
 | take 10
 | project 
-    EventTimestamp,
-    IDocType,
-    MessageType,
-    IDocNumber,
-    SenderSystem,
+    timestamp,
+    idoc_type,
+    message_type,
+    sap_system,
+    docnum=control.docnum,
     PartitionId,
-    SequenceNumber
+    EventProcessedUtcTime
 
-// 4. Compter les valeurs NULL par colonne
+// 4. Count NULL values per column
 idoc_raw
 | summarize 
     TotalRows = count(),
-    EventTimestamp_Nulls = countif(isnull(EventTimestamp)),
-    IDocType_Nulls = countif(isnull(IDocType)),
-    MessageType_Nulls = countif(isnull(MessageType)),
-    IDocNumber_Nulls = countif(isnull(IDocNumber)),
-    SenderSystem_Nulls = countif(isnull(SenderSystem)),
-    PartitionId_Nulls = countif(isnull(PartitionId))
+    timestamp_Nulls = countif(isnull(timestamp)),
+    idoc_type_Nulls = countif(isnull(idoc_type)),
+    message_type_Nulls = countif(isnull(message_type)),
+    sap_system_Nulls = countif(isnull(sap_system)),
+    control_Nulls = countif(isnull(control)),
+    data_Nulls = countif(isnull(data))
 
-// 5. Parser manuellement le JSON pour voir la structure réelle
+// 5. Parse JSON manually to see actual structure
 idoc_raw
 | take 1
-| extend ParsedPayload = parse_json(RawPayload)
 | project 
-    ParsedPayload,
-    idoc_type = ParsedPayload.idoc_type,
-    message_type = ParsedPayload.message_type,
-    timestamp = ParsedPayload.timestamp,
-    control = ParsedPayload.control,
-    data = ParsedPayload.data
+    idoc_type,
+    message_type,
+    timestamp,
+    control,
+    data,
+    control_docnum = control.docnum,
+    control_status = control.status
 
-// 6. Tester si les champs existent dans le JSON brut
-idoc_row
+// 6. Test if fields exist in raw JSON
+idoc_raw
 | take 5
-| extend 
-    HasIdocType = RawPayload contains "idoc_type",
-    HasMessageType = RawPayload contains "message_type",
-    HasTimestamp = RawPayload contains "timestamp",
-    HasControl = RawPayload contains "control"
 | project 
     PartitionId,
-    HasIdocType,
-    HasMessageType,
-    HasTimestamp,
-    HasControl,
-    RawPayload
+    has_idoc_type = isnotnull(idoc_type),
+    has_message_type = isnotnull(message_type),
+    has_timestamp = isnotnull(timestamp),
+    has_control = isnotnull(control),
+    has_data = isnotnull(data)

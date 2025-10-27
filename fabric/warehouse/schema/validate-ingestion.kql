@@ -1,39 +1,39 @@
-// Requêtes de validation pour vérifier l'ingestion des IDocs
+// Validation queries to verify IDoc ingestion
 
-// 1. Compter le total de messages reçus
+// 1. Count total messages received
 idoc_raw 
 | count
 
-// 2. Afficher les 10 derniers messages
+// 2. Display the 10 most recent messages
 idoc_raw 
-| top 10 by EventTimestamp desc
-| project EventTimestamp, IDocType, IDocNumber, MessageType, SenderSystem, ReceiverSystem, Status
+| top 10 by timestamp desc
+| project timestamp, idoc_type, message_type, sap_system, docnum=control.docnum
 
-// 3. Compter par type d'IDoc
+// 3. Count by IDoc type
 idoc_raw 
-| summarize Count=count() by IDocType
+| summarize Count=count() by idoc_type
 | order by Count desc
 
-// 4. Compter par type de message
+// 4. Count by message type
 idoc_raw 
-| summarize Count=count() by MessageType
+| summarize Count=count() by message_type
 | order by Count desc
 
-// 5. Vérifier les timestamps (doivent être récents)
+// 5. Check timestamps (should be recent)
 idoc_raw 
 | summarize 
-    FirstMessage = min(EventTimestamp),
-    LastMessage = max(EventTimestamp),
+    FirstMessage = min(timestamp),
+    LastMessage = max(timestamp),
     TotalCount = count()
 
-// 6. Vérifier un message complet (voir tous les champs)
+// 6. View complete message (see all fields)
 idoc_raw 
 | take 1
 
-// 7. Utiliser les fonctions helper créées
-GetRecentIDocs(1) // IDocs de la dernière heure
+// 7. Use created helper functions
+GetRecentIDocs(1) // IDocs from the last hour
 
-// 8. Vérifier les segments (données détaillées)
+// 8. Check segments (detailed data)
 idoc_raw
 | take 1
-| project IDocType, IDocNumber, Segments
+| project idoc_type, docnum=control.docnum, data
