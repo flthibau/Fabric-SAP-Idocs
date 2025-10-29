@@ -1,0 +1,40 @@
+{
+  "status": "Published",
+  "type": "LineOfBusiness",
+  "id": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+  "name": "3PL Logistics",
+  "systemData": {
+    "createdAt": "2025-10-28T16:44:56.8195137Z",
+    "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+    "lastModifiedAt": "2025-10-28T16:44:56.8195137Z",
+    "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+  },
+  "description": "Governance domain for Third-Party Logistics (3PL) operations including SAP order management, shipments, warehousing, and invoicing. This domain encompasses real-time analytics and KPIs for logistics performance monitoring.",
+  "isRestricted": false,
+  "thumbnail": {
+    "color": "#0078D4"
+  },
+  "isStagingDomain": false,
+  "managedAttributes": [
+    {
+      "name": "businessArea",
+      "value": "Supply Chain & Logistics"
+    },
+    {
+      "name": "organizationalUnit",
+      "value": "Operations"
+    },
+    {
+      "name": "criticality",
+      "value": "High"
+    },
+    {
+      "name": "dataClassification",
+      "value": "Partner Shared"
+    },
+    {
+      "name": "sharingScope",
+      "value": "B2B - External Partners"
+    }
+  ]
+}

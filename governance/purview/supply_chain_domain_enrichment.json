@@ -1,0 +1,398 @@
+{
+  "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+  "objectives": [
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:22.7160533Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:22.7160533Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "acad150f-a1c7-4a12-ada1-fbc2a6c29fc6",
+      "definition": "Build a resilient and agile supply chain capable of withstanding disruptions, managing risks, and adapting to changing market conditions.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-27T11:27:22.411273Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:41.2090124Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:41.2090124Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "7a94c193-a509-4aea-a69a-9c8b8b692a78",
+      "definition": "Optimize transportation, warehousing, and distribution costs while maintaining service levels and sustainability commitments.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-27T11:27:40.83761Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:59.4312444Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:59.4312444Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "4e8c8206-cc2c-4869-809e-ac75f63b3aeb",
+      "definition": "Reduce environmental impact of supply chain operations and achieve carbon neutrality goals through sustainable practices.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-27T11:27:59.065119Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:16.7164004Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:16.7164004Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "3c140089-fc3c-4ceb-a502-57ff8bb58678",
+      "definition": "Accelerate digital transformation initiatives to enable real-time decision making, automation, and predictive analytics across the supply chain.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-27T11:28:16.652016Z"
+    }
+  ],
+  "keyResults": [
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:26.8848613Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:26.8848613Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "ece24525-7e4f-45f6-b472-f898d8319238",
+      "definition": "Reduce dependency on single-source suppliers to less than 20% of critical components",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 28.0,
+      "goal": 20.0,
+      "max": 20.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:32.1930128Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:32.1930128Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "272a884d-e37b-4048-8b90-d6047cda886d",
+      "definition": "Achieve inventory turnover ratio of 8 or higher",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 6.5,
+      "goal": 8.0,
+      "max": 8.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:36.4138009Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:36.4138009Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "fe8e5147-5708-46f5-8ede-c2a59af09fa9",
+      "definition": "Achieve 100% end-to-end visibility for Tier 1 and Tier 2 suppliers",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 85.0,
+      "goal": 100.0,
+      "max": 100.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:45.2864528Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:45.2864528Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "8db042c4-824f-410b-b466-393176167c1d",
+      "definition": "Reduce freight cost per unit shipped by 10% through route optimization and carrier consolidation",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 6.5,
+      "goal": 10.0,
+      "max": 10.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:50.0918895Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:50.0918895Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "ccfec70f-935a-4219-ba8c-016b2f7f13df",
+      "definition": "Increase warehouse space utilization to 85% or higher",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 78.0,
+      "goal": 85.0,
+      "max": 85.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:27:54.3549948Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:27:54.3549948Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "b98aaa32-ddfc-4186-847a-a2930674fa50",
+      "definition": "Reduce empty miles to less than 15% of total miles driven",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 18.0,
+      "goal": 15.0,
+      "max": 15.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:03.5922877Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:03.5922877Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "1d44c296-5501-45ac-a76f-e67c9a8b3bd0",
+      "definition": "Reduce Scope 3 carbon emissions by 15% year-over-year",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 9.0,
+      "goal": 15.0,
+      "max": 15.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:07.8877742Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:07.8877742Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "12e94856-f866-4bb6-9f1c-cdf2ae7a9d7c",
+      "definition": "Increase percentage of electric/hybrid vehicles in fleet to 25%",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 12.0,
+      "goal": 25.0,
+      "max": 25.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:12.6839464Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:12.6839464Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "f5d8154c-10e8-4f23-804b-22333af5059d",
+      "definition": "Reduce packaging waste by 20% through reusable and recyclable materials",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 14.0,
+      "goal": 20.0,
+      "max": 20.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:21.1908727Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:21.1908727Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "e3dc119b-ae92-4d83-aaa9-f7a990b6fec7",
+      "definition": "Automate 50% of manual supply chain processes",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 32.0,
+      "goal": 50.0,
+      "max": 50.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:25.6480501Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:25.6480501Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "6aa21912-25cc-4502-8f23-dc05101d76f8",
+      "definition": "Deploy 500 IoT sensors for real-time tracking and monitoring",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 285.0,
+      "goal": 500.0,
+      "max": 500.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:29.7751748Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:29.7751748Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "b323a01c-9d6a-4938-ac1f-b4b5c842a30c",
+      "definition": "Implement predictive analytics for 80% of demand planning processes",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 55.0,
+      "goal": 80.0,
+      "max": 80.0
+    }
+  ],
+  "glossaryTerms": [
+    {
+      "status": "Published",
+      "id": "e46a9c16-f2f8-4c75-8ea8-6916870f4b1c",
+      "name": "Bill of Lading",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:33.3183231Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:33.3183231Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "672d9717-f3bb-4170-9494-65506eddf4b5",
+      "name": "Just-In-Time",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:36.6514975Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:36.6514975Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "4688b012-6513-4009-9303-412fc2fd1f43",
+      "name": "Cross-Docking",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:39.5870109Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:39.5870109Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "dece9d41-4731-4282-b9f4-f16c26d89e82",
+      "name": "Demand Planning",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:42.7465345Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:42.7465345Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "3abb8152-9dd3-4aca-b551-d2dfe4bc6f1c",
+      "name": "Safety Stock",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:46.0185721Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:46.0185721Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "381fd2f4-b6c3-4cee-bb80-81d93e0f0d59",
+      "name": "Lead Time",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:49.3476363Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:49.3476363Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "c2b8e7d4-da48-437d-a040-351daaeb1481",
+      "name": "Freight Forwarder",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:52.923154Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:52.923154Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "f145cc16-291e-4864-9edb-5190cb43a853",
+      "name": "Landed Cost",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:55.6857588Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:55.6857588Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "527871d5-085c-46fe-a6a0-109206c6f8df",
+      "name": "Backorder",
+      "systemData": {
+        "createdAt": "2025-10-29T10:28:59.035468Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:28:59.035468Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "40691917-c1f0-4089-8def-a8ffe4071f36",
+      "name": "Cycle Count",
+      "systemData": {
+        "createdAt": "2025-10-29T10:29:02.3579544Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:29:02.3579544Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "28799f9a-3136-40b7-9613-a8be189eb3f5",
+      "name": "Freight Class",
+      "systemData": {
+        "createdAt": "2025-10-29T10:29:06.6071951Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:29:06.6071951Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "a767ec46-4bb9-4bb4-ac49-b9b50dcc9f38",
+      "name": "Vendor Managed Inventory",
+      "systemData": {
+        "createdAt": "2025-10-29T10:29:13.3657919Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:29:13.3657919Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "isMigrated": false
+    }
+  ],
+  "createdAt": "2025-10-29T11:27:19.665283"
+}

@@ -1,0 +1,142 @@
+// ===================================================================
+// SILVER LAYER - Shipments Table
+// ===================================================================
+// Creates cleansed shipments table from SHPMNT and DESADV IDocs
+// Business context: 3PL shipment tracking and delivery management
+
+// 1. CREATE Silver table for Shipments
+.create table idoc_shipments_silver (
+    // Primary keys
+    shipment_number: string,
+    tracking_number: string,
+    
+    // Related documents
+    order_number: string,
+    delivery_number: string,
+    
+    // Origin and destination
+    origin_location: string,
+    origin_address: string,
+    destination_location: string,
+    destination_address: string,
+    
+    // Carrier information
+    carrier_code: string,
+    carrier_name: string,
+    service_level: string,
+    transport_mode: string,
+    
+    // Dates and times
+    planned_ship_date: datetime,
+    actual_ship_date: datetime,
+    planned_delivery_date: datetime,
+    estimated_delivery_date: datetime,
+    actual_delivery_date: datetime,
+    
+    // Status
+    shipment_status: string,
+    delivery_status: string,
+    current_location: string,
+    
+    // Package details
+    package_count: int,
+    total_weight_kg: decimal,
+    total_volume_m3: decimal,
+    
+    // Calculated metrics
+    ship_delay_hours: real,
+    delivery_delay_hours: real,
+    transit_time_hours: real,
+    is_on_time: bool,
+    is_in_transit: bool,
+    
+    // System fields
+    sap_system: string,
+    idoc_type: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+// 2. CONFIGURE retention
+.alter table idoc_shipments_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+// 3. CREATE extraction function
+.create-or-alter function ExtractShipmentData(raw_data: dynamic, raw_control: dynamic, message_type: string) {
+    let planned_ship = todatetime(raw_data.planned_ship_date);
+    let actual_ship = todatetime(raw_data.actual_ship_date);
+    let planned_delivery = todatetime(raw_data.planned_delivery_date);
+    let actual_delivery = todatetime(raw_data.actual_delivery_date);
+    
+    // Calculate delays and transit time
+    let ship_delay = datetime_diff('hour', actual_ship, planned_ship);
+    let delivery_delay = datetime_diff('hour', actual_delivery, planned_delivery);
+    let transit_time = datetime_diff('hour', actual_delivery, actual_ship);
+    
+    // Determine status
+    let is_shipped = isnotnull(actual_ship);
+    let is_delivered = isnotnull(actual_delivery);
+    let is_in_transit = is_shipped and not(is_delivered);
+    let is_on_time = delivery_delay <= 0 or isnull(delivery_delay);
+    
+    pack(
+        "shipment_number", tostring(raw_control.docnum),
+        "tracking_number", tostring(raw_data.tracking_number),
+        "order_number", tostring(raw_data.order_number),
+        "delivery_number", tostring(raw_data.delivery_number),
+        "origin_location", tostring(raw_data.origin_location),
+        "origin_address", tostring(raw_data.origin_address),
+        "destination_location", tostring(raw_data.destination_location),
+        "destination_address", tostring(raw_data.destination_address),
+        "carrier_code", tostring(raw_data.carrier_code),
+        "carrier_name", tostring(raw_data.carrier_name),
+        "service_level", tostring(raw_data.service_level),
+        "transport_mode", tostring(raw_data.transport_mode),
+        "planned_ship_date", planned_ship,
+        "actual_ship_date", actual_ship,
+        "planned_delivery_date", planned_delivery,
+        "estimated_delivery_date", todatetime(raw_data.estimated_delivery_date),
+        "actual_delivery_date", actual_delivery,
+        "shipment_status", tostring(raw_data.shipment_status),
+        "delivery_status", tostring(raw_data.delivery_status),
+        "current_location", tostring(raw_data.current_location),
+        "package_count", toint(raw_data.package_count),
+        "total_weight_kg", todecimal(raw_data.total_weight),
+        "total_volume_m3", todecimal(raw_data.total_volume),
+        "ship_delay_hours", ship_delay,
+        "delivery_delay_hours", delivery_delay,
+        "transit_time_hours", transit_time,
+        "is_on_time", is_on_time,
+        "is_in_transit", is_in_transit,
+        "idoc_type", message_type
+    )
+}
+
+// 4. CREATE update policy for SHPMNT IDocs
+.alter table idoc_shipments_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type in ('SHPMNT', 'DESADV') | extend extracted = ExtractShipmentData(data, control, message_type) | project shipment_number = tostring(extracted.shipment_number), tracking_number = tostring(extracted.tracking_number), order_number = tostring(extracted.order_number), delivery_number = tostring(extracted.delivery_number), origin_location = tostring(extracted.origin_location), origin_address = tostring(extracted.origin_address), destination_location = tostring(extracted.destination_location), destination_address = tostring(extracted.destination_address), carrier_code = tostring(extracted.carrier_code), carrier_name = tostring(extracted.carrier_name), service_level = tostring(extracted.service_level), transport_mode = tostring(extracted.transport_mode), planned_ship_date = todatetime(extracted.planned_ship_date), actual_ship_date = todatetime(extracted.actual_ship_date), planned_delivery_date = todatetime(extracted.planned_delivery_date), estimated_delivery_date = todatetime(extracted.estimated_delivery_date), actual_delivery_date = todatetime(extracted.actual_delivery_date), shipment_status = tostring(extracted.shipment_status), delivery_status = tostring(extracted.delivery_status), current_location = tostring(extracted.current_location), package_count = toint(extracted.package_count), total_weight_kg = todecimal(extracted.total_weight_kg), total_volume_m3 = todecimal(extracted.total_volume_m3), ship_delay_hours = toreal(extracted.ship_delay_hours), delivery_delay_hours = toreal(extracted.delivery_delay_hours), transit_time_hours = toreal(extracted.transit_time_hours), is_on_time = tobool(extracted.is_on_time), is_in_transit = tobool(extracted.is_in_transit), sap_system = sap_system, idoc_type = tostring(extracted.idoc_type), idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+// 5. ENABLE caching and streaming
+.alter table idoc_shipments_silver policy caching hot = 30d
+.alter table idoc_shipments_silver policy streamingingestion enable
+
+print "✓ Silver layer table 'idoc_shipments_silver' created successfully"
+print "✓ Handles both SHPMNT and DESADV IDoc types"
+print "✓ Real-time shipment tracking enabled"

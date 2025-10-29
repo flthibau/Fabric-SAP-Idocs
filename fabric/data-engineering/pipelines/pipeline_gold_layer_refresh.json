@@ -1,0 +1,225 @@
+{
+  "name": "Pipeline - Gold Layer Refresh",
+  "description": "Orchestrate Gold layer table creation from Silver shortcuts in Lakehouse",
+  "properties": {
+    "activities": [
+      {
+        "name": "Orders Daily Summary",
+        "type": "DatabricksNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.00:10:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/Fabric/data-engineering/notebooks/gold_layer_orders_summary",
+          "baseParameters": {}
+        },
+        "linkedServiceName": {
+          "referenceName": "Lakehouse3PLAnalytics",
+          "type": "LinkedServiceReference"
+        }
+      },
+      {
+        "name": "SLA Performance",
+        "type": "DatabricksNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.00:10:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/Fabric/data-engineering/notebooks/gold_layer_sla_performance",
+          "baseParameters": {}
+        },
+        "linkedServiceName": {
+          "referenceName": "Lakehouse3PLAnalytics",
+          "type": "LinkedServiceReference"
+        }
+      },
+      {
+        "name": "Shipments In Transit",
+        "type": "DatabricksNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.00:05:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/Fabric/data-engineering/notebooks/gold_layer_shipments_in_transit",
+          "baseParameters": {}
+        },
+        "linkedServiceName": {
+          "referenceName": "Lakehouse3PLAnalytics",
+          "type": "LinkedServiceReference"
+        }
+      },
+      {
+        "name": "Warehouse Productivity",
+        "type": "DatabricksNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.00:10:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/Fabric/data-engineering/notebooks/gold_layer_warehouse_productivity",
+          "baseParameters": {}
+        },
+        "linkedServiceName": {
+          "referenceName": "Lakehouse3PLAnalytics",
+          "type": "LinkedServiceReference"
+        }
+      },
+      {
+        "name": "Revenue Recognition",
+        "type": "DatabricksNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.00:10:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/Fabric/data-engineering/notebooks/gold_layer_revenue_recognition",
+          "baseParameters": {}
+        },
+        "linkedServiceName": {
+          "referenceName": "Lakehouse3PLAnalytics",
+          "type": "LinkedServiceReference"
+        }
+      },
+      {
+        "name": "Trigger Purview Scan",
+        "type": "WebActivity",
+        "dependsOn": [
+          {
+            "activity": "Orders Daily Summary",
+            "dependencyConditions": ["Succeeded"]
+          },
+          {
+            "activity": "SLA Performance",
+            "dependencyConditions": ["Succeeded"]
+          },
+          {
+            "activity": "Shipments In Transit",
+            "dependencyConditions": ["Succeeded"]
+          },
+          {
+            "activity": "Warehouse Productivity",
+            "dependencyConditions": ["Succeeded"]
+          },
+          {
+            "activity": "Revenue Recognition",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "policy": {
+          "timeout": "0.00:05:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "url": "https://stpurview.scan.purview.azure.com/datasources/Fabric-JAc/scans/Scan-DKT/run?api-version=2022-07-01-preview",
+          "method": "POST",
+          "headers": {},
+          "body": {
+            "scanLevel": "Full"
+          },
+          "authentication": {
+            "type": "MSI",
+            "resource": "https://purview.azure.net"
+          }
+        }
+      },
+      {
+        "name": "Send Success Notification",
+        "type": "WebActivity",
+        "dependsOn": [
+          {
+            "activity": "Trigger Purview Scan",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "policy": {
+          "timeout": "0.00:02:00",
+          "retry": 0
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "url": "https://prod-26.eastus.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "pipeline_name": "@{pipeline().Pipeline}",
+            "run_id": "@{pipeline().RunId}",
+            "status": "Success",
+            "message": "Gold layer tables refreshed and Purview scan triggered",
+            "timestamp": "@{utcnow()}"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "IncrementalLoad": {
+        "type": "bool",
+        "defaultValue": false
+      },
+      "BackfillDays": {
+        "type": "int",
+        "defaultValue": 7
+      }
+    },
+    "annotations": [
+      "Gold Layer",
+      "Lakehouse",
+      "Purview"
+    ],
+    "folder": {
+      "name": "Data Engineering/Gold Layer"
+    }
+  },
+  "triggers": [
+    {
+      "name": "Daily Refresh 2AM",
+      "type": "ScheduleTrigger",
+      "typeProperties": {
+        "recurrence": {
+          "frequency": "Day",
+          "interval": 1,
+          "startTime": "2025-10-27T02:00:00Z",
+          "timeZone": "UTC",
+          "schedule": {
+            "hours": [2],
+            "minutes": [0]
+          }
+        }
+      }
+    },
+    {
+      "name": "On Silver Update",
+      "type": "BlobEventsTrigger",
+      "typeProperties": {
+        "blobPathBeginsWith": "/Lakehouse3PLAnalytics/Tables/idoc_",
+        "blobPathEndsWith": "/_delta_log/",
+        "ignoreEmptyBlobs": true,
+        "scope": "/subscriptions/{subscription-id}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/onelake",
+        "events": [
+          "Microsoft.Storage.BlobCreated"
+        ]
+      }
+    }
+  ]
+}

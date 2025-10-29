@@ -1,0 +1,132 @@
+// ===================================================================
+// SILVER LAYER - Orders Table
+// ===================================================================
+// Creates cleansed and structured orders table from raw IDocs
+// Business context: 3PL order management and tracking
+
+// 1. CREATE Silver table for Orders
+.create table idoc_orders_silver (
+    // Primary keys
+    order_number: string,
+    order_version: int,
+    
+    // Business fields
+    customer_id: string,
+    customer_name: string,
+    order_date: datetime,
+    requested_delivery_date: datetime,
+    promised_delivery_date: datetime,
+    
+    // Order details
+    order_type: string,
+    priority: string,
+    total_amount: decimal,
+    currency: string,
+    payment_terms: string,
+    
+    // Status and tracking
+    order_status: string,
+    processing_status: string,
+    created_by: string,
+    last_modified: datetime,
+    
+    // Calculated fields
+    order_age_hours: real,
+    is_delayed: bool,
+    sla_status: string,
+    
+    // Line items (summary)
+    total_lines: int,
+    total_quantity: decimal,
+    total_weight_kg: decimal,
+    
+    // System fields
+    sap_system: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data (for audit)
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+// 2. CONFIGURE retention (1 year for cleansed data)
+.alter table idoc_orders_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+// 3. CREATE update policy to auto-populate from Bronze
+.create-or-alter function ExtractOrderData(raw_data: dynamic, raw_control: dynamic) {
+    // Extract order header
+    let header = raw_data;
+    
+    // Calculate order age
+    let order_date = todatetime(raw_control.credat);
+    let age_hours = datetime_diff('hour', now(), order_date);
+    
+    // Determine SLA status (example: 24h for processing)
+    let sla_threshold_hours = 24;
+    let sla_status = case(
+        age_hours < sla_threshold_hours * 0.5, "Good",
+        age_hours < sla_threshold_hours, "At Risk",
+        "Breached"
+    );
+    
+    // Build result
+    pack(
+        "order_number", tostring(raw_control.docnum),
+        "order_version", 1,
+        "customer_id", tostring(header.customer_id),
+        "customer_name", tostring(header.customer_name),
+        "order_date", order_date,
+        "requested_delivery_date", todatetime(header.delivery_date),
+        "promised_delivery_date", todatetime(header.delivery_date),
+        "order_type", tostring(header.order_type),
+        "priority", tostring(header.priority),
+        "total_amount", todecimal(header.total_amount),
+        "currency", tostring(header.currency),
+        "payment_terms", tostring(header.payment_terms),
+        "order_status", tostring(raw_control.status),
+        "processing_status", tostring(header.processing_status),
+        "created_by", tostring(header.created_by),
+        "last_modified", now(),
+        "order_age_hours", age_hours,
+        "is_delayed", age_hours > sla_threshold_hours,
+        "sla_status", sla_status,
+        "total_lines", toint(header.line_count),
+        "total_quantity", todecimal(header.total_quantity),
+        "total_weight_kg", todecimal(header.total_weight),
+        "sap_system", "",
+        "idoc_number", tostring(raw_control.docnum),
+        "ingestion_timestamp", now(),
+        "raw_control", raw_control,
+        "raw_data", raw_data
+    )
+}
+
+// 4. CREATE update policy (auto-transform from Bronze to Silver)
+.alter table idoc_orders_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type == 'ORDERS' | extend extracted = ExtractOrderData(data, control) | project order_number = tostring(extracted.order_number), order_version = toint(extracted.order_version), customer_id = tostring(extracted.customer_id), customer_name = tostring(extracted.customer_name), order_date = todatetime(extracted.order_date), requested_delivery_date = todatetime(extracted.requested_delivery_date), promised_delivery_date = todatetime(extracted.promised_delivery_date), order_type = tostring(extracted.order_type), priority = tostring(extracted.priority), total_amount = todecimal(extracted.total_amount), currency = tostring(extracted.currency), payment_terms = tostring(extracted.payment_terms), order_status = tostring(extracted.order_status), processing_status = tostring(extracted.processing_status), created_by = tostring(extracted.created_by), last_modified = todatetime(extracted.last_modified), order_age_hours = toreal(extracted.order_age_hours), is_delayed = tobool(extracted.is_delayed), sla_status = tostring(extracted.sla_status), total_lines = toint(extracted.total_lines), total_quantity = todecimal(extracted.total_quantity), total_weight_kg = todecimal(extracted.total_weight_kg), sap_system = sap_system, idoc_number = tostring(extracted.idoc_number), ingestion_timestamp = todatetime(extracted.ingestion_timestamp), raw_control = extracted.raw_control, raw_data = extracted.raw_data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+// 5. CREATE indexes for performance
+.alter table idoc_orders_silver policy caching hot = 30d
+
+// 6. ENABLE streaming ingestion
+.alter table idoc_orders_silver policy streamingingestion enable
+
+print "✓ Silver layer table 'idoc_orders_silver' created successfully"
+print "✓ Update policy enabled - auto-populates from idoc_raw"
+print "✓ Retention: 365 days"
+print "✓ Ready for Order tracking and analytics"

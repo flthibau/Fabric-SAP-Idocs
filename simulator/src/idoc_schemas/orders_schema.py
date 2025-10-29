@@ -50,7 +50,7 @@ class ORDERSSchema(BaseIDocSchema):
         total_value = sum(item.get("price", 0) * item.get("quantity", 1) for item in items)
         total_weight = sum(item.get("weight_kg", 0) * item.get("quantity", 1) for item in items)
         
-        # E1EDK01 - Document header
+        # E1EDK01 - Document header (Enhanced for B2B partner sharing)
         header = {
             "segnam": "E1EDK01",
             "action": "004",  # Create
@@ -73,7 +73,11 @@ class ORDERSSchema(BaseIDocSchema):
             "recipnt_no": customer["customer_id"],
             "kzazu": "X",  # Delivery complete indicator
             "wkurs_m": "1.00000",
-            "vsbed": priority
+            "vsbed": priority,
+            # B2B Partner Fields
+            "customer_id": customer.get("customer_id", ""),  # Customer ID for filtering
+            "customer_name": customer.get("name", ""),  # Customer company name for portal
+            "partner_access_scope": "CUSTOMER"  # Defines who can access this order
         }
         
         # E1EDK02 - Document data

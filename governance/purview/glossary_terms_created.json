@@ -1,0 +1,423 @@
+[
+  {
+    "status": "Published",
+    "id": "720cc4a9-e76a-4ae5-9cca-33e9b348f1d4",
+    "name": "Order",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:03.0813755Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:03.0813755Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "A customer order for goods or services in the 3PL system. Represents a request from a customer to fulfill specific items with defined quantities, delivery requirements, and SLA expectations. Tracked from creation through fulfillment and invoicing.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "PO",
+      "SO"
+    ],
+    "resources": [
+      {
+        "name": "SAP IDoc ORDERS05",
+        "url": "https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/orders05"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Transactional"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Order Management"
+      },
+      {
+        "name": "retentionPeriod",
+        "value": "7 years"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "c4919c7a-4e11-4dcf-a92c-f5c0ec6a06e2",
+    "name": "Shipment",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:09.4609137Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:09.4609137Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "A physical delivery of goods from origin to destination. Represents the logistics execution phase including carrier assignment, tracking, transit monitoring, and delivery confirmation. Critical for SLA compliance and customer satisfaction.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "SHPMNT",
+      "DESADV"
+    ],
+    "resources": [
+      {
+        "name": "SAP IDoc SHPMNT05",
+        "url": "https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/shpmnt05"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Transactional"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Transportation Management"
+      },
+      {
+        "name": "retentionPeriod",
+        "value": "7 years"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "22e918f3-e2cc-4962-a0dd-cac5548323e9",
+    "name": "Warehouse Movement",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:16.5031553Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:16.5031553Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "Physical movement of goods within or between warehouse locations. Includes goods receipt, putaway, picking, packing, and staging operations. Essential for inventory accuracy and fulfillment efficiency.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "WHSCON",
+      "WM"
+    ],
+    "resources": [
+      {
+        "name": "SAP IDoc WHSCON02",
+        "url": "https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/whscon02"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Transactional"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Warehouse Management"
+      },
+      {
+        "name": "retentionPeriod",
+        "value": "3 years"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "21a592f7-bfd3-4734-8285-0eb9be211a70",
+    "name": "Invoice",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:22.1088381Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:22.1088381Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "Financial document requesting payment for goods or services delivered. Represents the billing cycle including pricing, taxes, payment terms, and settlement tracking. Critical for revenue recognition and cash flow management.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "INVOIC"
+    ],
+    "resources": [
+      {
+        "name": "SAP IDoc INVOIC02",
+        "url": "https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/invoic02"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Financial"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Billing & Invoicing"
+      },
+      {
+        "name": "retentionPeriod",
+        "value": "10 years"
+      },
+      {
+        "name": "compliance",
+        "value": "SOX, GDPR"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "0442f6bd-01ad-4738-8ed8-73cd55d0dcc1",
+    "name": "Customer",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:28.4814007Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:28.4814007Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "Business entity or individual that contracts 3PL services. Master data entity containing contact information, shipping addresses, billing details, and SLA agreements. Used across all logistics processes.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "CUST"
+    ],
+    "resources": [
+      {
+        "name": "Customer Master Data",
+        "url": "https://internal-wiki.example.com/customer-mdm"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Master Data"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Customer Relationship Management"
+      },
+      {
+        "name": "sensitivityLevel",
+        "value": "Confidential"
+      },
+      {
+        "name": "compliance",
+        "value": "GDPR"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "fbcc1793-cda4-45a1-ad46-3b1821508c9c",
+    "name": "Carrier",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:34.3365704Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:34.3365704Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "Transportation service provider responsible for physical delivery of shipments. Includes freight forwarders, courier services, and last-mile delivery partners. Performance tracked via on-time delivery metrics.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "CSP",
+      "LSP"
+    ],
+    "resources": [
+      {
+        "name": "Carrier Master Data",
+        "url": "https://internal-wiki.example.com/carrier-mdm"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Master Data"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Transportation Management"
+      },
+      {
+        "name": "sensitivityLevel",
+        "value": "Internal"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "f592dfa5-4f26-4025-a12f-f73cc84d3f46",
+    "name": "SLA Compliance",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:39.6723244Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:39.6723244Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "Measurement of adherence to Service Level Agreements between 3PL provider and customers. Includes metrics like on-time delivery percentage, order accuracy, and response times. Critical KPI for customer satisfaction and contract renewal.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "SLA"
+    ],
+    "resources": [
+      {
+        "name": "SLA Dashboard",
+        "url": "https://internal-wiki.example.com/sla-metrics"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Performance Metric"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Quality Management"
+      },
+      {
+        "name": "updateFrequency",
+        "value": "Real-time"
+      }
+    ]
+  },
+  {
+    "status": "Published",
+    "id": "be0d6d20-49d3-46af-b5ae-9dabf3244a2d",
+    "name": "Delivery Performance",
+    "systemData": {
+      "createdAt": "2025-10-28T18:17:45.7710448Z",
+      "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+      "lastModifiedAt": "2025-10-28T18:17:45.7710448Z",
+      "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+    },
+    "description": "Aggregate measure of delivery execution quality including on-time delivery rate, delivery accuracy, customer satisfaction scores, and damage/loss rates. Primary operational KPI for 3PL operations.",
+    "contacts": {
+      "owner": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "3PL Business Unit Owner"
+        }
+      ],
+      "expert": [
+        {
+          "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+          "description": "Supply Chain Analyst"
+        }
+      ]
+    },
+    "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+    "acronyms": [
+      "OTD",
+      "OTIF"
+    ],
+    "resources": [
+      {
+        "name": "Delivery Metrics Dashboard",
+        "url": "https://internal-wiki.example.com/delivery-metrics"
+      }
+    ],
+    "isMigrated": false,
+    "managedAttributes": [
+      {
+        "name": "dataCategory",
+        "value": "Performance Metric"
+      },
+      {
+        "name": "businessProcess",
+        "value": "Logistics Operations"
+      },
+      {
+        "name": "updateFrequency",
+        "value": "Hourly"
+      }
+    ]
+  }
+]

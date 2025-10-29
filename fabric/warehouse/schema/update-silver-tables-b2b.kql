@@ -1,0 +1,494 @@
+// ===================================================================
+// UPDATE SILVER TABLES - Add B2B Partner Columns
+// ===================================================================
+// This script adds B2B partner identifier columns to Silver tables
+// to enable multi-tenant data filtering
+//
+// EXECUTE IN FABRIC EVENTHOUSE: kqldbsapidoc
+// ===================================================================
+
+print "=========================================="
+print "  UPDATING SILVER TABLES WITH B2B COLUMNS"
+print "=========================================="
+print ""
+
+// ===================================================================
+// STEP 1: Update idoc_shipments_silver
+// ===================================================================
+
+print "STEP 1: Updating idoc_shipments_silver..."
+print ""
+
+// Drop existing table and update policy
+.drop table idoc_shipments_silver ifexists
+
+// Recreate with B2B columns
+.create table idoc_shipments_silver (
+    // Primary keys
+    shipment_number: string,
+    tracking_number: string,
+    
+    // Related documents
+    order_number: string,
+    delivery_number: string,
+    
+    // Origin and destination
+    origin_location: string,
+    origin_address: string,
+    destination_location: string,
+    destination_address: string,
+    
+    // Carrier information
+    carrier_code: string,
+    carrier_name: string,
+    service_level: string,
+    transport_mode: string,
+    
+    // *** B2B PARTNER COLUMNS (NEW) ***
+    carrier_id: string,
+    carrier_name_b2b: string,
+    customer_id: string,
+    customer_name: string,
+    partner_access_scope: string,
+    
+    // Dates and times
+    planned_ship_date: datetime,
+    actual_ship_date: datetime,
+    planned_delivery_date: datetime,
+    estimated_delivery_date: datetime,
+    actual_delivery_date: datetime,
+    
+    // Status
+    shipment_status: string,
+    delivery_status: string,
+    current_location: string,
+    
+    // Package details
+    package_count: int,
+    total_weight_kg: decimal,
+    total_volume_m3: decimal,
+    
+    // Calculated metrics
+    ship_delay_hours: real,
+    delivery_delay_hours: real,
+    transit_time_hours: real,
+    is_on_time: bool,
+    is_in_transit: bool,
+    
+    // System fields
+    sap_system: string,
+    idoc_type: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+// Configure retention
+.alter table idoc_shipments_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+// Enhanced extraction function with B2B fields
+.create-or-alter function ExtractShipmentDataB2B(raw_data: dynamic, raw_control: dynamic, message_type: string) {
+    let shpmntHeader = raw_data.E1SHP00;
+    let desadvHeader = raw_data.E1EDK01;
+    
+    let planned_ship = todatetime(coalesce(shpmntHeader.planned_ship_date, desadvHeader.bldat));
+    let actual_ship = todatetime(shpmntHeader.actual_ship_date);
+    let planned_delivery = todatetime(shpmntHeader.planned_delivery_date);
+    let actual_delivery = todatetime(shpmntHeader.actual_delivery_date);
+    
+    // Calculate delays and transit time
+    let ship_delay = datetime_diff('hour', actual_ship, planned_ship);
+    let delivery_delay = datetime_diff('hour', actual_delivery, planned_delivery);
+    let transit_time = datetime_diff('hour', actual_delivery, actual_ship);
+    
+    // Determine status
+    let is_shipped = isnotnull(actual_ship);
+    let is_delivered = isnotnull(actual_delivery);
+    let is_in_transit = is_shipped and not(is_delivered);
+    let is_on_time = delivery_delay <= 0 or isnull(delivery_delay);
+    
+    pack(
+        "shipment_number", tostring(raw_control.docnum),
+        "tracking_number", tostring(coalesce(shpmntHeader.signi, desadvHeader.traid)),
+        "order_number", tostring(shpmntHeader.order_id),
+        "delivery_number", tostring(coalesce(shpmntHeader.delivery_id, desadvHeader.belnr)),
+        "origin_location", tostring(shpmntHeader.origin_warehouse),
+        "origin_address", "",
+        "destination_location", tostring(shpmntHeader.destination_city),
+        "destination_address", "",
+        "carrier_code", tostring(coalesce(shpmntHeader.tdlnr, desadvHeader.vsart)),
+        "carrier_name", tostring(coalesce(shpmntHeader.carrier, desadvHeader.carrier_name)),
+        "service_level", tostring(coalesce(shpmntHeader.vsbed, desadvHeader.vsart)),
+        "transport_mode", tostring(shpmntHeader.vsart),
+        // *** B2B PARTNER FIELDS ***
+        "carrier_id", tostring(coalesce(shpmntHeader.carrier_id, desadvHeader.carrier_id)),
+        "carrier_name_b2b", tostring(coalesce(shpmntHeader.carrier_name, desadvHeader.carrier_name)),
+        "customer_id", tostring(coalesce(shpmntHeader.customer_id, desadvHeader.customer_id)),
+        "customer_name", tostring(coalesce(shpmntHeader.customer_name, desadvHeader.customer_name)),
+        "partner_access_scope", tostring(coalesce(shpmntHeader.partner_access_scope, desadvHeader.partner_access_scope, "CARRIER_CUSTOMER")),
+        // Dates
+        "planned_ship_date", planned_ship,
+        "actual_ship_date", actual_ship,
+        "planned_delivery_date", planned_delivery,
+        "estimated_delivery_date", todatetime(shpmntHeader.estimated_delivery),
+        "actual_delivery_date", actual_delivery,
+        "shipment_status", tostring(shpmntHeader.shipment_status),
+        "delivery_status", tostring(shpmntHeader.delivery_status),
+        "current_location", tostring(shpmntHeader.current_location),
+        "package_count", toint(shpmntHeader.package_count),
+        "total_weight_kg", todecimal(shpmntHeader.total_weight),
+        "total_volume_m3", todecimal(shpmntHeader.total_volume),
+        "ship_delay_hours", ship_delay,
+        "delivery_delay_hours", delivery_delay,
+        "transit_time_hours", transit_time,
+        "is_on_time", is_on_time,
+        "is_in_transit", is_in_transit,
+        "idoc_type", message_type
+    )
+}
+
+// Update policy with B2B extraction
+.alter table idoc_shipments_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type in ('SHPMNT', 'DESADV') | extend extracted = ExtractShipmentDataB2B(data, control, message_type) | project shipment_number = tostring(extracted.shipment_number), tracking_number = tostring(extracted.tracking_number), order_number = tostring(extracted.order_number), delivery_number = tostring(extracted.delivery_number), origin_location = tostring(extracted.origin_location), origin_address = tostring(extracted.origin_address), destination_location = tostring(extracted.destination_location), destination_address = tostring(extracted.destination_address), carrier_code = tostring(extracted.carrier_code), carrier_name = tostring(extracted.carrier_name), service_level = tostring(extracted.service_level), transport_mode = tostring(extracted.transport_mode), carrier_id = tostring(extracted.carrier_id), carrier_name_b2b = tostring(extracted.carrier_name_b2b), customer_id = tostring(extracted.customer_id), customer_name = tostring(extracted.customer_name), partner_access_scope = tostring(extracted.partner_access_scope), planned_ship_date = todatetime(extracted.planned_ship_date), actual_ship_date = todatetime(extracted.actual_ship_date), planned_delivery_date = todatetime(extracted.planned_delivery_date), estimated_delivery_date = todatetime(extracted.estimated_delivery_date), actual_delivery_date = todatetime(extracted.actual_delivery_date), shipment_status = tostring(extracted.shipment_status), delivery_status = tostring(extracted.delivery_status), current_location = tostring(extracted.current_location), package_count = toint(extracted.package_count), total_weight_kg = todecimal(extracted.total_weight_kg), total_volume_m3 = todecimal(extracted.total_volume_m3), ship_delay_hours = toreal(extracted.ship_delay_hours), delivery_delay_hours = toreal(extracted.delivery_delay_hours), transit_time_hours = toreal(extracted.transit_time_hours), is_on_time = tobool(extracted.is_on_time), is_in_transit = tobool(extracted.is_in_transit), sap_system = sap_system, idoc_type = tostring(extracted.idoc_type), idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+.alter table idoc_shipments_silver policy caching hot = 30d
+.alter table idoc_shipments_silver policy streamingingestion enable
+
+print "✓ idoc_shipments_silver updated with B2B columns"
+print ""
+
+// ===================================================================
+// STEP 2: Update idoc_orders_silver
+// ===================================================================
+
+print "STEP 2: Updating idoc_orders_silver..."
+print ""
+
+.drop table idoc_orders_silver ifexists
+
+.create table idoc_orders_silver (
+    // Primary keys
+    order_number: string,
+    order_type: string,
+    
+    // Customer information
+    customer_number: string,
+    sold_to_party: string,
+    ship_to_party: string,
+    
+    // *** B2B PARTNER COLUMNS (NEW) ***
+    customer_id: string,
+    customer_name: string,
+    partner_access_scope: string,
+    
+    // Dates
+    order_date: datetime,
+    requested_delivery_date: datetime,
+    confirmed_delivery_date: datetime,
+    
+    // Status
+    order_status: string,
+    fulfillment_status: string,
+    
+    // Financial
+    total_value: decimal,
+    currency: string,
+    payment_terms: string,
+    
+    // Quantities
+    total_quantity: int,
+    total_weight_kg: decimal,
+    line_item_count: int,
+    
+    // System fields
+    sap_system: string,
+    idoc_type: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+.alter table idoc_orders_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+.create-or-alter function ExtractOrderDataB2B(raw_data: dynamic, raw_control: dynamic) {
+    let header = raw_data.E1EDK01;
+    pack(
+        "order_number", tostring(raw_control.docnum),
+        "order_type", tostring(header.bsart),
+        "customer_number", tostring(header.recipnt_no),
+        "sold_to_party", tostring(header.recipnt_no),
+        "ship_to_party", "",
+        // *** B2B PARTNER FIELDS ***
+        "customer_id", tostring(header.customer_id),
+        "customer_name", tostring(header.customer_name),
+        "partner_access_scope", tostring(coalesce(header.partner_access_scope, "CUSTOMER")),
+        // Dates
+        "order_date", todatetime(header.bldat),
+        "requested_delivery_date", todatetime(header.delivery_date),
+        "confirmed_delivery_date", todatetime(header.confirmed_delivery),
+        "order_status", tostring(header.order_status),
+        "fulfillment_status", tostring(header.fulfillment_status),
+        "total_value", todecimal(header.total_value),
+        "currency", tostring(header.curcy),
+        "payment_terms", tostring(header.zterm),
+        "total_quantity", toint(header.total_quantity),
+        "total_weight_kg", todecimal(header.total_weight),
+        "line_item_count", toint(header.item_count)
+    )
+}
+
+.alter table idoc_orders_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type == 'ORDERS' | extend extracted = ExtractOrderDataB2B(data, control) | project order_number = tostring(extracted.order_number), order_type = tostring(extracted.order_type), customer_number = tostring(extracted.customer_number), sold_to_party = tostring(extracted.sold_to_party), ship_to_party = tostring(extracted.ship_to_party), customer_id = tostring(extracted.customer_id), customer_name = tostring(extracted.customer_name), partner_access_scope = tostring(extracted.partner_access_scope), order_date = todatetime(extracted.order_date), requested_delivery_date = todatetime(extracted.requested_delivery_date), confirmed_delivery_date = todatetime(extracted.confirmed_delivery_date), order_status = tostring(extracted.order_status), fulfillment_status = tostring(extracted.fulfillment_status), total_value = todecimal(extracted.total_value), currency = tostring(extracted.currency), payment_terms = tostring(extracted.payment_terms), total_quantity = toint(extracted.total_quantity), total_weight_kg = todecimal(extracted.total_weight_kg), line_item_count = toint(extracted.line_item_count), sap_system = sap_system, idoc_type = idoc_type, idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+.alter table idoc_orders_silver policy caching hot = 30d
+.alter table idoc_orders_silver policy streamingingestion enable
+
+print "✓ idoc_orders_silver updated with B2B columns"
+print ""
+
+// ===================================================================
+// STEP 3: Update idoc_warehouse_silver
+// ===================================================================
+
+print "STEP 3: Updating idoc_warehouse_silver..."
+print ""
+
+.drop table idoc_warehouse_silver ifexists
+
+.create table idoc_warehouse_silver (
+    // Primary keys
+    confirmation_number: string,
+    warehouse_id: string,
+    
+    // *** B2B PARTNER COLUMNS (NEW) ***
+    warehouse_partner_id: string,
+    warehouse_partner_name: string,
+    partner_access_scope: string,
+    
+    // Operation details
+    operation_type: string,
+    reference_document: string,
+    material_id: string,
+    
+    // Quantities and metrics
+    quantity: int,
+    unit_of_measure: string,
+    weight_kg: decimal,
+    
+    // Dates and times
+    operation_date: datetime,
+    confirmation_date: datetime,
+    
+    // Status
+    status: string,
+    operator: string,
+    
+    // System fields
+    sap_system: string,
+    idoc_type: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+.alter table idoc_warehouse_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+.create-or-alter function ExtractWarehouseDataB2B(raw_data: dynamic, raw_control: dynamic) {
+    let header = raw_data.E1WHC00;
+    pack(
+        "confirmation_number", tostring(header.confno),
+        "warehouse_id", tostring(header.lgnum),
+        // *** B2B PARTNER FIELDS ***
+        "warehouse_partner_id", tostring(header.warehouse_partner_id),
+        "warehouse_partner_name", tostring(header.warehouse_partner_name),
+        "partner_access_scope", tostring(coalesce(header.partner_access_scope, "WAREHOUSE_PARTNER")),
+        // Operation
+        "operation_type", tostring(header.whstype),
+        "reference_document", tostring(header.refdoc),
+        "material_id", tostring(header.matnr),
+        "quantity", toint(header.menge),
+        "unit_of_measure", tostring(header.meins),
+        "weight_kg", todecimal(header.brgew),
+        "operation_date", todatetime(strcat(header.confdat, "T", header.conftim)),
+        "confirmation_date", todatetime(header.confdat),
+        "status", tostring(header.status),
+        "operator", tostring(header.usnam)
+    )
+}
+
+.alter table idoc_warehouse_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type == 'WHSCON' | extend extracted = ExtractWarehouseDataB2B(data, control) | project confirmation_number = tostring(extracted.confirmation_number), warehouse_id = tostring(extracted.warehouse_id), warehouse_partner_id = tostring(extracted.warehouse_partner_id), warehouse_partner_name = tostring(extracted.warehouse_partner_name), partner_access_scope = tostring(extracted.partner_access_scope), operation_type = tostring(extracted.operation_type), reference_document = tostring(extracted.reference_document), material_id = tostring(extracted.material_id), quantity = toint(extracted.quantity), unit_of_measure = tostring(extracted.unit_of_measure), weight_kg = todecimal(extracted.weight_kg), operation_date = todatetime(extracted.operation_date), confirmation_date = todatetime(extracted.confirmation_date), status = tostring(extracted.status), operator = tostring(extracted.operator), sap_system = sap_system, idoc_type = idoc_type, idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+.alter table idoc_warehouse_silver policy caching hot = 30d
+.alter table idoc_warehouse_silver policy streamingingestion enable
+
+print "✓ idoc_warehouse_silver updated with B2B columns"
+print ""
+
+// ===================================================================
+// STEP 4: Update idoc_invoices_silver
+// ===================================================================
+
+print "STEP 4: Updating idoc_invoices_silver..."
+print ""
+
+.drop table idoc_invoices_silver ifexists
+
+.create table idoc_invoices_silver (
+    // Primary keys
+    invoice_number: string,
+    invoice_type: string,
+    
+    // Customer information
+    bill_to_customer: string,
+    
+    // *** B2B PARTNER COLUMNS (NEW) ***
+    customer_id: string,
+    customer_name: string,
+    partner_access_scope: string,
+    
+    // References
+    order_reference: string,
+    delivery_reference: string,
+    
+    // Financial
+    invoice_amount: decimal,
+    tax_amount: decimal,
+    total_amount: decimal,
+    currency: string,
+    payment_terms: string,
+    
+    // Dates
+    invoice_date: datetime,
+    due_date: datetime,
+    posting_date: datetime,
+    
+    // Status
+    payment_status: string,
+    
+    // System fields
+    sap_system: string,
+    idoc_type: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+.alter table idoc_invoices_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+.create-or-alter function ExtractInvoiceDataB2B(raw_data: dynamic, raw_control: dynamic) {
+    let header = raw_data.E1EDK01;
+    pack(
+        "invoice_number", tostring(header.belnr),
+        "invoice_type", tostring(header.bsart),
+        "bill_to_customer", tostring(header.recipnt_no),
+        // *** B2B PARTNER FIELDS ***
+        "customer_id", tostring(header.customer_id),
+        "customer_name", tostring(header.customer_name),
+        "partner_access_scope", tostring(coalesce(header.partner_access_scope, "CUSTOMER")),
+        // References
+        "order_reference", tostring(header.order_ref),
+        "delivery_reference", tostring(header.delivery_ref),
+        // Financial
+        "invoice_amount", todecimal(header.invoice_amount),
+        "tax_amount", todecimal(header.tax_amount),
+        "total_amount", todecimal(header.total_amount),
+        "currency", tostring(header.curcy),
+        "payment_terms", tostring(header.zterm),
+        // Dates
+        "invoice_date", todatetime(header.bldat),
+        "due_date", todatetime(header.due_date),
+        "posting_date", todatetime(header.posting_date),
+        "payment_status", tostring(header.payment_status)
+    )
+}
+
+.alter table idoc_invoices_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type == 'INVOIC' | extend extracted = ExtractInvoiceDataB2B(data, control) | project invoice_number = tostring(extracted.invoice_number), invoice_type = tostring(extracted.invoice_type), bill_to_customer = tostring(extracted.bill_to_customer), customer_id = tostring(extracted.customer_id), customer_name = tostring(extracted.customer_name), partner_access_scope = tostring(extracted.partner_access_scope), order_reference = tostring(extracted.order_reference), delivery_reference = tostring(extracted.delivery_reference), invoice_amount = todecimal(extracted.invoice_amount), tax_amount = todecimal(extracted.tax_amount), total_amount = todecimal(extracted.total_amount), currency = tostring(extracted.currency), payment_terms = tostring(extracted.payment_terms), invoice_date = todatetime(extracted.invoice_date), due_date = todatetime(extracted.due_date), posting_date = todatetime(extracted.posting_date), payment_status = tostring(extracted.payment_status), sap_system = sap_system, idoc_type = idoc_type, idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+.alter table idoc_invoices_silver policy caching hot = 30d
+.alter table idoc_invoices_silver policy streamingingestion enable
+
+print "✓ idoc_invoices_silver updated with B2B columns"
+print ""
+
+print "=========================================="
+print "  ✓ ALL SILVER TABLES UPDATED"
+print "=========================================="
+print ""
+print "Summary of B2B columns added:"
+print "- idoc_shipments_silver: carrier_id, carrier_name_b2b, customer_id, customer_name, partner_access_scope"
+print "- idoc_orders_silver: customer_id, customer_name, partner_access_scope"
+print "- idoc_warehouse_silver: warehouse_partner_id, warehouse_partner_name, partner_access_scope"
+print "- idoc_invoices_silver: customer_id, customer_name, partner_access_scope"
+print ""
+print "Next: Update Gold Materialized Lake Views"
+print ""

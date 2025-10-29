@@ -1,0 +1,190 @@
+// ===================================================================
+// SILVER LAYER - Invoices Table
+// ===================================================================
+// Creates cleansed invoices table from INVOIC IDocs
+// Business context: 3PL billing and revenue tracking
+
+// 1. CREATE Silver table for Invoices
+.create table idoc_invoices_silver (
+    // Primary keys
+    invoice_id: string,
+    invoice_number: string,
+    
+    // Invoice details
+    invoice_type: string,           // Standard, Credit, Debit, Pro-forma
+    invoice_date: datetime,
+    due_date: datetime,
+    posting_date: datetime,
+    
+    // Customer information
+    customer_id: string,
+    customer_name: string,
+    billing_address: string,
+    customer_vat_number: string,
+    
+    // Financial details
+    currency: string,
+    subtotal_amount: decimal,
+    tax_amount: decimal,
+    discount_amount: decimal,
+    total_amount: decimal,
+    amount_paid: decimal,
+    amount_due: decimal,
+    
+    // Payment details
+    payment_terms: string,
+    payment_method: string,
+    payment_status: string,         // Pending, Partial, Paid, Overdue, Cancelled
+    payment_date: datetime,
+    
+    // Related documents
+    order_numbers: dynamic,         // Array of related orders
+    shipment_numbers: dynamic,      // Array of related shipments
+    purchase_order: string,
+    contract_number: string,
+    
+    // Service details
+    service_type: string,           // Storage, Transportation, Handling, etc.
+    service_period_from: datetime,
+    service_period_to: datetime,
+    total_line_items: int,
+    
+    // Tax and compliance
+    tax_rate: decimal,
+    tax_jurisdiction: string,
+    fiscal_year: int,
+    fiscal_period: int,
+    
+    // Calculated metrics
+    days_to_due: int,
+    days_overdue: int,
+    is_overdue: bool,
+    aging_bucket: string,           // Current, 1-30, 31-60, 61-90, 90+
+    payment_efficiency: real,       // Percentage paid on time
+    
+    // Business metrics
+    gross_margin_pct: real,
+    revenue_category: string,
+    is_disputed: bool,
+    dispute_reason: string,
+    
+    // System fields
+    sap_system: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+// 2. CONFIGURE retention
+.alter table idoc_invoices_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "2555.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+// 3. CREATE extraction function
+.create-or-alter function ExtractInvoiceData(raw_data: dynamic, raw_control: dynamic) {
+    let invoice_date = todatetime(raw_data.invoice_date);
+    let due_date = todatetime(raw_data.due_date);
+    let payment_date = todatetime(raw_data.payment_date);
+    let today = now();
+    
+    // Calculate payment metrics
+    let days_to_due = datetime_diff('day', due_date, today);
+    let days_overdue = datetime_diff('day', today, due_date);
+    let is_overdue = days_overdue > 0 and tostring(raw_data.payment_status) != "Paid";
+    
+    // Determine aging bucket
+    let aging_bucket = case(
+        not(is_overdue), "Current",
+        days_overdue <= 30, "1-30 days",
+        days_overdue <= 60, "31-60 days",
+        days_overdue <= 90, "61-90 days",
+        "90+ days"
+    );
+    
+    // Calculate amounts
+    let subtotal = todecimal(raw_data.subtotal_amount);
+    let tax = todecimal(raw_data.tax_amount);
+    let discount = todecimal(raw_data.discount_amount);
+    let total = subtotal + tax - discount;
+    let paid = todecimal(raw_data.amount_paid);
+    let due = total - paid;
+    
+    // Calculate payment efficiency (paid within terms)
+    let payment_efficiency = iff(
+        payment_date != datetime(null) and due_date != datetime(null),
+        iff(payment_date <= due_date, 100.0, 0.0),
+        0.0
+    );
+    
+    pack(
+        "invoice_id", tostring(raw_control.docnum),
+        "invoice_number", tostring(raw_data.invoice_number),
+        "invoice_type", tostring(raw_data.invoice_type),
+        "invoice_date", invoice_date,
+        "due_date", due_date,
+        "posting_date", todatetime(raw_data.posting_date),
+        "customer_id", tostring(raw_data.customer_id),
+        "customer_name", tostring(raw_data.customer_name),
+        "billing_address", tostring(raw_data.billing_address),
+        "customer_vat_number", tostring(raw_data.vat_number),
+        "currency", tostring(raw_data.currency),
+        "subtotal_amount", subtotal,
+        "tax_amount", tax,
+        "discount_amount", discount,
+        "total_amount", total,
+        "amount_paid", paid,
+        "amount_due", due,
+        "payment_terms", tostring(raw_data.payment_terms),
+        "payment_method", tostring(raw_data.payment_method),
+        "payment_status", tostring(raw_data.payment_status),
+        "payment_date", payment_date,
+        "order_numbers", todynamic(raw_data.order_numbers),
+        "shipment_numbers", todynamic(raw_data.shipment_numbers),
+        "purchase_order", tostring(raw_data.purchase_order),
+        "contract_number", tostring(raw_data.contract_number),
+        "service_type", tostring(raw_data.service_type),
+        "service_period_from", todatetime(raw_data.service_from),
+        "service_period_to", todatetime(raw_data.service_to),
+        "total_line_items", toint(raw_data.line_items),
+        "tax_rate", todecimal(raw_data.tax_rate),
+        "tax_jurisdiction", tostring(raw_data.tax_jurisdiction),
+        "fiscal_year", toint(raw_data.fiscal_year),
+        "fiscal_period", toint(raw_data.fiscal_period),
+        "days_to_due", days_to_due,
+        "days_overdue", days_overdue,
+        "is_overdue", is_overdue,
+        "aging_bucket", aging_bucket,
+        "payment_efficiency", payment_efficiency,
+        "gross_margin_pct", todecimal(raw_data.margin_pct),
+        "revenue_category", tostring(raw_data.revenue_category),
+        "is_disputed", tostring(raw_data.dispute_flag) == "X",
+        "dispute_reason", tostring(raw_data.dispute_reason)
+    )
+}
+
+// 4. CREATE update policy
+.alter table idoc_invoices_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type == 'INVOIC' | extend extracted = ExtractInvoiceData(data, control) | project invoice_id = tostring(extracted.invoice_id), invoice_number = tostring(extracted.invoice_number), invoice_type = tostring(extracted.invoice_type), invoice_date = todatetime(extracted.invoice_date), due_date = todatetime(extracted.due_date), posting_date = todatetime(extracted.posting_date), customer_id = tostring(extracted.customer_id), customer_name = tostring(extracted.customer_name), billing_address = tostring(extracted.billing_address), customer_vat_number = tostring(extracted.customer_vat_number), currency = tostring(extracted.currency), subtotal_amount = todecimal(extracted.subtotal_amount), tax_amount = todecimal(extracted.tax_amount), discount_amount = todecimal(extracted.discount_amount), total_amount = todecimal(extracted.total_amount), amount_paid = todecimal(extracted.amount_paid), amount_due = todecimal(extracted.amount_due), payment_terms = tostring(extracted.payment_terms), payment_method = tostring(extracted.payment_method), payment_status = tostring(extracted.payment_status), payment_date = todatetime(extracted.payment_date), order_numbers = todynamic(extracted.order_numbers), shipment_numbers = todynamic(extracted.shipment_numbers), purchase_order = tostring(extracted.purchase_order), contract_number = tostring(extracted.contract_number), service_type = tostring(extracted.service_type), service_period_from = todatetime(extracted.service_period_from), service_period_to = todatetime(extracted.service_period_to), total_line_items = toint(extracted.total_line_items), tax_rate = todecimal(extracted.tax_rate), tax_jurisdiction = tostring(extracted.tax_jurisdiction), fiscal_year = toint(extracted.fiscal_year), fiscal_period = toint(extracted.fiscal_period), days_to_due = toint(extracted.days_to_due), days_overdue = toint(extracted.days_overdue), is_overdue = tobool(extracted.is_overdue), aging_bucket = tostring(extracted.aging_bucket), payment_efficiency = toreal(extracted.payment_efficiency), gross_margin_pct = todecimal(extracted.gross_margin_pct), revenue_category = tostring(extracted.revenue_category), is_disputed = tobool(extracted.is_disputed), dispute_reason = tostring(extracted.dispute_reason), sap_system = sap_system, idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+// 5. ENABLE caching and streaming
+.alter table idoc_invoices_silver policy caching hot = 90d
+.alter table idoc_invoices_silver policy streamingingestion enable
+
+print "✓ Silver layer table 'idoc_invoices_silver' created successfully"
+print "✓ Financial tracking and billing enabled"
+print "✓ Real-time revenue and AR monitoring"

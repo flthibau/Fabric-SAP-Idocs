@@ -1,0 +1,62 @@
+{
+    "sources": [
+        {
+            "id": "68da3e12-4b3d-4336-92a5-b7f85c33d5e3",
+            "name": "AzureEventHub",
+            "type": "AzureEventHub",
+            "properties": {
+                "dataConnectionId": "9816c9cd-d299-4b31-9f08-27cc8b55f5ee",
+                "consumerGroupName": "fabric-consumer",
+                "inputSerialization": {
+                    "type": "Json",
+                    "properties": {
+                        "encoding": "UTF8"
+                    }
+                }
+            }
+        }
+    ],
+    "destinations": [
+        {
+            "id": "f0fab134-7f25-4d46-88de-8201b46e871d",
+            "name": "Eventhouse",
+            "type": "Eventhouse",
+            "properties": {
+                "dataIngestionMode": "DirectIngestion",
+                "workspaceId": "ad53e547-23dc-46b0-ab5f-2acbaf0eec64",
+                "itemId": "52d870d7-fa30-4cce-9f54-9b264f94c60b",
+                "tableName": "",
+                "connectionName": null,
+                "mappingRuleName": null
+            },
+            "inputNodes": [
+                {
+                    "name": "SAPIdocIngestAuto-stream"
+                }
+            ],
+            "inputSchemas": [
+                {
+                    "name": "SAPIdocIngestAuto-stream",
+                    "schema": {
+                        "columns": []
+                    }
+                }
+            ]
+        }
+    ],
+    "streams": [
+        {
+            "id": "ea19cee0-3b23-4363-bcaf-5e734e76d4e1",
+            "name": "SAPIdocIngestAuto-stream",
+            "type": "DefaultStream",
+            "properties": {},
+            "inputNodes": [
+                {
+                    "name": "AzureEventHub"
+                }
+            ]
+        }
+    ],
+    "operators": [],
+    "compatibilityLevel": "1.1"
+}

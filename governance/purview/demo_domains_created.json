@@ -1,0 +1,923 @@
+{
+  "domains": [
+    {
+      "status": "Published",
+      "type": "LineOfBusiness",
+      "id": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "name": "Finance",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:22.6952792Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:22.6952792Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "description": "Financial management, accounting, budgeting, and financial reporting. Responsible for company financial health, compliance, and strategic financial planning.",
+      "isRestricted": false,
+      "thumbnail": {
+        "color": "#0078D4"
+      },
+      "isStagingDomain": false
+    },
+    {
+      "status": "Published",
+      "type": "LineOfBusiness",
+      "id": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "name": "Human Resources",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:29.0989349Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:29.0989349Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "description": "Talent management, employee development, compensation, benefits, and workforce planning. Focused on building a high-performing, engaged, and diverse workforce.",
+      "isRestricted": false,
+      "thumbnail": {
+        "color": "#0078D4"
+      },
+      "isStagingDomain": false
+    },
+    {
+      "status": "Published",
+      "type": "LineOfBusiness",
+      "id": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "name": "Sales & Marketing",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:11.974088Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:11.974088Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "description": "Revenue generation, customer acquisition, brand management, and market development. Drives business growth through effective sales strategies and marketing campaigns.",
+      "isRestricted": false,
+      "thumbnail": {
+        "color": "#0078D4"
+      },
+      "isStagingDomain": false
+    }
+  ],
+  "objectives": [
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:27.217455Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:27.217455Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "dd47ccba-3a33-4825-aa22-77924a71581c",
+      "definition": "Ensure 100% accuracy in financial reporting and maintain full compliance with regulatory requirements (SOX, IFRS, local GAAP). Reduce audit findings and improve financial controls.",
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "targetDate": "2026-04-27T11:21:26.367649Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:37.8361694Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:37.8361694Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "22b754c9-2bb0-4762-b3fc-4ddad21075e7",
+      "definition": "Optimize operational costs and improve profit margins through data-driven decision making, automated processes, and strategic vendor management.",
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "targetDate": "2026-04-27T11:21:37.777986Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:49.9535063Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:49.9535063Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "d01cf1da-2827-4c29-bd4a-654e9865affa",
+      "definition": "Improve forecasting accuracy and strategic financial planning to support business growth and investment decisions.",
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "targetDate": "2026-04-27T11:21:49.924293Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:33.4983599Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:33.4983599Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "3b0bbac5-0a62-4e98-9b94-34d9745408c6",
+      "definition": "Attract, hire, and onboard top talent efficiently to support business growth. Reduce time-to-hire and improve candidate quality and experience.",
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "targetDate": "2026-04-27T11:22:33.391885Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:50.0858412Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:50.0858412Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "59ce7071-aed5-4553-b103-e71881909b87",
+      "definition": "Increase employee engagement, satisfaction, and retention to reduce turnover costs and maintain organizational knowledge.",
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "targetDate": "2026-04-27T11:22:49.912518Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:06.819666Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:06.819666Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "57211c34-215e-4967-b326-80f6b776c8b9",
+      "definition": "Build a culture of continuous learning and development to enhance employee skills, career growth, and organizational capability.",
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "targetDate": "2026-04-27T11:23:06.564505Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:16.2290393Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:16.2290393Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "3274a61d-20d6-46bf-a31f-a1da868cc131",
+      "definition": "Achieve aggressive revenue growth targets through new customer acquisition, upselling, and market expansion.",
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "targetDate": "2026-04-27T11:24:16.077781Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:33.8408646Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:33.8408646Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "799741de-3eed-443a-8201-3764ee7d7c64",
+      "definition": "Optimize sales processes, improve conversion rates, and reduce sales cycle time to maximize productivity and win rates.",
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "targetDate": "2026-04-27T11:24:33.305068Z"
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:54.7072053Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:54.7072053Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "099e224f-65e5-4745-bfe9-dc425719b441",
+      "definition": "Maximize marketing return on investment and generate high-quality leads that convert to revenue.",
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "targetDate": "2026-04-27T11:24:54.526328Z"
+    }
+  ],
+  "keyResults": [
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:29.4315989Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:29.4315989Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "97aebbab-4a51-4fa7-b0c5-3528ff0369a1",
+      "definition": "Reduce audit findings to zero critical and less than 5 medium findings per quarter",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 3.0,
+      "goal": 5.0,
+      "max": 5.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:32.0593867Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:32.0593867Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "c6d4dba2-9bfb-477d-9251-f7202ae4c9c9",
+      "definition": "Complete month-end close process within 5 business days",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 6.0,
+      "goal": 5.0,
+      "max": 5.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:34.7004151Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:34.7004151Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "fbc373e7-3971-4893-9abc-39b1f9a58106",
+      "definition": "Achieve 99.5% data accuracy in financial systems",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 99.2,
+      "goal": 99.5,
+      "max": 99.5
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:40.3012182Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:40.3012182Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "2fd3dc78-5b02-4da4-aa3d-a4d39122476c",
+      "definition": "Reduce operating expenses by 8% year-over-year",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 5.2,
+      "goal": 8.0,
+      "max": 8.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:43.3581923Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:43.3581923Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "5f1e4779-ec6b-41c8-9e6c-d4195abdcfab",
+      "definition": "Automate 60% of manual financial processes",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 42.0,
+      "goal": 60.0,
+      "max": 60.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:46.5044099Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:46.5044099Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "e834ebff-20eb-4ad4-8db8-783de1b2d9f2",
+      "definition": "Maintain budget variance under 3% across all departments",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 4.1,
+      "goal": 3.0,
+      "max": 3.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:52.3955345Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:52.3955345Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "6e8a7fc2-8433-4cb0-8b81-f66e36360ac1",
+      "definition": "Achieve 95% accuracy in quarterly revenue forecasts",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 91.0,
+      "goal": 95.0,
+      "max": 95.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:54.9375532Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:54.9375532Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "911e557b-dca3-4a4e-a081-a231dfcd5344",
+      "definition": "Provide 90-day rolling cash flow forecasts with weekly updates",
+      "domainId": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "progress": 60.0,
+      "goal": 90.0,
+      "max": 90.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:36.865495Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:36.865495Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "91246fe6-1150-4509-ad6b-115c9f6e147e",
+      "definition": "Reduce average time to hire to 30 days or less",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 38.0,
+      "goal": 30.0,
+      "max": 30.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:41.5429665Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:41.5429665Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "46430cd2-8b85-43fe-8f45-3fc795f64e94",
+      "definition": "Achieve 90% manager satisfaction with new hire quality",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 85.0,
+      "goal": 90.0,
+      "max": 90.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:45.9553666Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:45.9553666Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "ad2fe219-33e1-4779-9c57-1c0df5fbbf76",
+      "definition": "Maintain offer acceptance rate at 85% or higher",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 82.0,
+      "goal": 85.0,
+      "max": 85.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:54.1164107Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:54.1164107Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "53953a80-6e2c-4a2c-b751-0adcd68ab637",
+      "definition": "Achieve employee engagement score of 80% or higher",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 76.0,
+      "goal": 80.0,
+      "max": 80.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:58.3341224Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:58.3341224Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "c912b7fd-2957-4aa5-8589-e4642f8df600",
+      "definition": "Reduce voluntary turnover to 10% or below annually",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 12.5,
+      "goal": 10.0,
+      "max": 10.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:01.7343825Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:01.7343825Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "75e4eff1-2e8c-48d4-b0bc-538b0965d5f3",
+      "definition": "Achieve eNPS of 40 or higher",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 35.0,
+      "goal": 40.0,
+      "max": 40.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:12.4071198Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:12.4071198Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "b5c66aa6-4136-4749-880d-18c55611e216",
+      "definition": "Provide 40+ hours of training per employee annually",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 28.0,
+      "goal": 40.0,
+      "max": 40.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:17.7752405Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:17.7752405Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "f07b0f81-6dc1-40df-b015-6a5dbe6a172a",
+      "definition": "Identify and develop 50 high-potential employees for leadership roles",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 32.0,
+      "goal": 50.0,
+      "max": 50.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:23.3458758Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:23.3458758Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "ecaab405-812b-453b-badf-d533f6c7ed6b",
+      "definition": "Close 70% of identified critical skills gaps through training programs",
+      "domainId": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "progress": 45.0,
+      "goal": 70.0,
+      "max": 70.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:20.4004572Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:20.4004572Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "e6be7728-ca1a-4663-aaf4-33699913898f",
+      "definition": "Grow ARR by 25% year-over-year",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 18.0,
+      "goal": 25.0,
+      "max": 25.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:24.0677939Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:24.0677939Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "3a17e8c6-2849-4a59-8081-a4e5d81ceb1c",
+      "definition": "Acquire 500 new customers this year",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 320.0,
+      "goal": 500.0,
+      "max": 500.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:28.8140747Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:28.8140747Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "2329a1a2-58af-4864-98c3-ac9a3f93e843",
+      "definition": "Increase average deal size to $50K or higher",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 42000.0,
+      "goal": 50000.0,
+      "max": 50000.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:38.8259033Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:38.8259033Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "a6c59a69-0e21-430a-8462-9ff33a3519fd",
+      "definition": "Reduce average sales cycle to 60 days or less",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 75.0,
+      "goal": 60.0,
+      "max": 60.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:42.9940169Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:42.9940169Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "cc8438a7-512a-41f3-9ab3-e3340c3df810",
+      "definition": "Achieve 30% win rate on qualified opportunities",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 26.0,
+      "goal": 30.0,
+      "max": 30.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:48.967484Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:48.967484Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "d0fee49b-8205-43db-aac5-7d99008844b9",
+      "definition": "Achieve 80% of sales reps at or above quota",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 68.0,
+      "goal": 80.0,
+      "max": 80.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:58.6389702Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:58.6389702Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "2f8ab50c-5650-433e-b166-e56bf74d0e55",
+      "definition": "Generate 2000 marketing qualified leads per quarter",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 1650.0,
+      "goal": 2000.0,
+      "max": 2000.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:04.8794714Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:04.8794714Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "efd08152-5766-40ec-ba0e-5361efbd2deb",
+      "definition": "Achieve 25% conversion rate from MQL to sales opportunity",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 22.0,
+      "goal": 25.0,
+      "max": 25.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:10.3984232Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:10.3984232Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "10454abd-e774-4353-ac7b-28e71d408794",
+      "definition": "Achieve 5:1 marketing ROI (revenue generated per marketing dollar spent)",
+      "domainId": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "progress": 4.2,
+      "goal": 5.0,
+      "max": 5.0
+    }
+  ],
+  "glossaryTerms": [
+    {
+      "status": "Published",
+      "id": "744d37ba-e46d-4275-bbcb-63a7d328ff78",
+      "name": "General Ledger",
+      "systemData": {
+        "createdAt": "2025-10-29T10:21:58.6223549Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:21:58.6223549Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "1d0eac60-b027-4255-9cb7-80263143bf44",
+      "name": "Chart of Accounts",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:01.6425117Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:01.6425117Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "0c3718b1-f258-4213-bc30-65da987b1b93",
+      "name": "Accounts Payable",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:04.0660849Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:04.0660849Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "3d576951-ca9a-4cb5-be81-eed7064395ac",
+      "name": "Accounts Receivable",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:06.7255889Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:06.7255889Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "8f7642df-4b03-4f90-b919-4b1926743507",
+      "name": "EBITDA",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:09.6318952Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:09.6318952Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "6ba1047c-6af0-46ef-a9de-8f7098d51268",
+      "name": "Working Capital",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:14.5569131Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:14.5569131Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "7e199e2b-ce40-4128-961d-fc8c6fb24114",
+      "name": "Cost Center",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:19.1688048Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:19.1688048Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "1e0a8f7a-8c24-4766-a7d2-10043c9359c9",
+      "name": "Journal Entry",
+      "systemData": {
+        "createdAt": "2025-10-29T10:22:23.523312Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:22:23.523312Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "ec27a7d0-66ca-41ba-a3fd-872710646203",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "82a29883-008d-473a-977c-fbcda39a6503",
+      "name": "Full-Time Equivalent",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:29.3010883Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:29.3010883Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "9e8c18ca-4032-4bfc-a108-e65238b48127",
+      "name": "Employee Net Promoter Score",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:33.4398988Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:33.4398988Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "6013cfd8-76b5-4f24-a79d-8f8df1617e57",
+      "name": "Time to Hire",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:37.4377132Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:37.4377132Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "ae469ce3-9318-4565-bde6-acfb9420802a",
+      "name": "Attrition Rate",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:42.7991354Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:42.7991354Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "e1d59fb0-3922-4338-8780-07eee6b4bbe3",
+      "name": "Performance Review",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:47.2251889Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:47.2251889Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "9afde1b6-9022-470e-a911-40ae2290a7c8",
+      "name": "Onboarding",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:51.4809147Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:51.4809147Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "104ce716-fc8f-4b62-914b-a6d04f640a4f",
+      "name": "Succession Planning",
+      "systemData": {
+        "createdAt": "2025-10-29T10:23:55.855359Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:23:55.855359Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "718234e1-0c86-4d3d-8eff-71304a2b25d3",
+      "name": "Total Compensation",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:00.0491945Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:00.0491945Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "fe965676-4064-4c48-9c17-7d1854ebeb11",
+      "name": "Diversity & Inclusion",
+      "systemData": {
+        "createdAt": "2025-10-29T10:24:05.2080879Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:24:05.2080879Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "d5e2ac09-beff-4ed9-b87f-2636d3d11101",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "1f9d83c4-f546-4daa-bee9-ba062ac89f97",
+      "name": "Customer Acquisition Cost",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:15.2564079Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:15.2564079Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "c2f3409d-a6df-4e0d-a0b5-1acc7d3598f1",
+      "name": "Customer Lifetime Value",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:19.3843271Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:19.3843271Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "3ab390b2-5449-4758-9489-d57aa0b829c2",
+      "name": "Marketing Qualified Lead",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:23.6924381Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:23.6924381Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "5c608679-fbf2-4cb4-8120-f71f8fdd977a",
+      "name": "Sales Qualified Lead",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:28.6043577Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:28.6043577Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "471ba3f9-cb05-4df5-91bc-5d40d2ffd344",
+      "name": "Conversion Rate",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:33.4193651Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:33.4193651Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "d1b144af-c3ce-42f7-bcb9-9637c96491ae",
+      "name": "Annual Recurring Revenue",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:37.4396405Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:37.4396405Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "e82f8c93-15c6-4e3c-befb-83f26f7c233b",
+      "name": "Customer Churn Rate",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:41.3014485Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:41.3014485Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "73226c5a-6e39-4e08-9dc6-6d1bfd20b936",
+      "name": "Sales Pipeline",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:46.1003693Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:46.1003693Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "62519fb0-79c7-4234-8cb2-a36d0a6c7d5e",
+      "name": "Net Promoter Score",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:50.6335103Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:50.6335103Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    },
+    {
+      "status": "Published",
+      "id": "2df367bf-2945-4aa8-bf6e-ce6fd9101092",
+      "name": "Return on Ad Spend",
+      "systemData": {
+        "createdAt": "2025-10-29T10:25:55.4157112Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-29T10:25:55.4157112Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "domain": "98fba94a-60cc-48d1-9da5-8f010606aa9d",
+      "isMigrated": false
+    }
+  ],
+  "createdAt": "2025-10-29T11:21:19.572665"
+}

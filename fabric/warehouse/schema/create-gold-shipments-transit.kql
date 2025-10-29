@@ -1,0 +1,89 @@
+// ===================================================================
+// GOLD LAYER - Shipments In Transit Materialized View
+// ===================================================================
+// Real-time tracking of active shipments for operational dashboards
+// Optimized for GraphQL API queries
+
+// 1. CREATE materialized view for in-transit shipments
+.create async materialized-view with (backfill=true) shipments_in_transit on table idoc_shipments_silver
+{
+    idoc_shipments_silver
+    | where is_in_transit == true
+    | extend 
+        // Calculate current transit duration
+        current_transit_hours = datetime_diff('hour', now(), actual_ship_date),
+        
+        // Calculate remaining time to planned delivery
+        hours_to_planned_delivery = datetime_diff('hour', planned_delivery_date, now()),
+        
+        // Determine urgency level
+        urgency_level = case(
+            hours_to_planned_delivery < 0, "Overdue",
+            hours_to_planned_delivery <= 24, "Critical",
+            hours_to_planned_delivery <= 48, "High",
+            hours_to_planned_delivery <= 72, "Medium",
+            "Normal"
+        ),
+        
+        // Calculate progress percentage (based on planned times)
+        planned_transit_hours = datetime_diff('hour', planned_delivery_date, planned_ship_date),
+        elapsed_transit_hours = datetime_diff('hour', now(), actual_ship_date)
+    | extend 
+        transit_progress_pct = iff(
+            planned_transit_hours > 0,
+            round(100.0 * todouble(elapsed_transit_hours) / todouble(planned_transit_hours), 2),
+            0.0
+        )
+    | project 
+        shipment_number,
+        tracking_number,
+        order_number,
+        
+        // Carrier information
+        carrier_code,
+        carrier_name,
+        service_level,
+        transport_mode,
+        
+        // Location tracking
+        origin_location,
+        origin_country,
+        destination_location,
+        destination_country,
+        
+        // Time tracking
+        actual_ship_date,
+        planned_delivery_date,
+        current_transit_hours,
+        hours_to_planned_delivery,
+        transit_progress_pct,
+        
+        // Status and urgency
+        shipment_status,
+        urgency_level,
+        is_on_time,
+        
+        // Metrics
+        total_packages,
+        total_weight_kg,
+        total_volume_m3,
+        
+        // Dates for filtering
+        ship_date_only = startofday(actual_ship_date),
+        expected_delivery_date_only = startofday(planned_delivery_date),
+        
+        // System fields
+        sap_system,
+        ingestion_timestamp
+    | order by urgency_level desc, hours_to_planned_delivery asc
+}
+
+// 2. CONFIGURE caching for ultra-fast queries
+.alter materialized-view shipments_in_transit policy caching hot = 30d
+
+// 3. ENABLE streaming for real-time updates
+.alter materialized-view shipments_in_transit policy streamingingestion enable
+
+print "✓ Materialized view 'shipments_in_transit' created successfully"
+print "✓ Real-time shipment tracking enabled"
+print "✓ Urgency-based prioritization configured"

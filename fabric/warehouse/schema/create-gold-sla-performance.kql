@@ -1,0 +1,195 @@
+// ===================================================================
+// GOLD LAYER - SLA Performance Materialized View
+// ===================================================================
+// Real-time SLA tracking across all operational dimensions
+// Optimized for executive dashboards and GraphQL API
+
+// 1. CREATE materialized view for SLA performance tracking
+.create async materialized-view with (backfill=true) sla_performance on table idoc_orders_silver
+{
+    // Combine orders and shipments for comprehensive SLA view
+    idoc_orders_silver
+    | extend 
+        date_only = startofday(order_date),
+        week_start = startofweek(order_date),
+        month_start = startofmonth(order_date)
+    | summarize 
+        // Volume metrics
+        total_orders = count(),
+        
+        // SLA compliance - Orders
+        order_sla_good = countif(sla_status == "Good"),
+        order_sla_at_risk = countif(sla_status == "At Risk"),
+        order_sla_breached = countif(sla_status == "Breached"),
+        
+        // Delay metrics
+        delayed_orders = countif(is_delayed == true),
+        avg_order_age_hours = avg(order_age_hours),
+        
+        // Status distribution
+        pending_orders = countif(order_status == "Pending"),
+        confirmed_orders = countif(order_status == "Confirmed"),
+        shipped_orders = countif(order_status == "Shipped"),
+        delivered_orders = countif(order_status == "Delivered"),
+        cancelled_orders = countif(order_status == "Cancelled"),
+        
+        // Priority-based SLA
+        high_priority_orders = countif(priority == "High"),
+        high_priority_breached = countif(priority == "High" and sla_status == "Breached"),
+        
+        // Customer satisfaction proxy
+        on_time_deliveries = countif(sla_status == "Good" and order_status == "Delivered"),
+        
+        // Time metrics
+        avg_time_to_ship = avgif(order_age_hours, order_status in ("Shipped", "Delivered")),
+        avg_time_to_deliver = avgif(order_age_hours, order_status == "Delivered"),
+        
+        // Financial impact
+        total_order_value = sum(total_amount),
+        breached_order_value = sumif(total_amount, sla_status == "Breached")
+        
+        by date_only, sap_system
+    | extend 
+        // Calculate SLA performance KPIs
+        order_sla_compliance_pct = round(100.0 * todouble(order_sla_good) / todouble(total_orders), 2),
+        order_sla_at_risk_pct = round(100.0 * todouble(order_sla_at_risk) / todouble(total_orders), 2),
+        order_sla_breach_pct = round(100.0 * todouble(order_sla_breached) / todouble(total_orders), 2),
+        
+        // Delay rate
+        delay_rate_pct = round(100.0 * todouble(delayed_orders) / todouble(total_orders), 2),
+        
+        // High priority performance
+        high_priority_breach_rate = iff(
+            high_priority_orders > 0,
+            round(100.0 * todouble(high_priority_breached) / todouble(high_priority_orders), 2),
+            0.0
+        ),
+        
+        // Completion metrics
+        completion_rate = round(100.0 * todouble(delivered_orders) / todouble(total_orders), 2),
+        cancellation_rate = round(100.0 * todouble(cancelled_orders) / todouble(total_orders), 2),
+        
+        // On-time delivery rate (OTDR)
+        otdr_pct = iff(
+            delivered_orders > 0,
+            round(100.0 * todouble(on_time_deliveries) / todouble(delivered_orders), 2),
+            0.0
+        ),
+        
+        // Financial impact of breaches
+        breach_financial_impact_pct = round(100.0 * breached_order_value / total_order_value, 2),
+        
+        // Performance score (weighted)
+        overall_performance_score = round(
+            (todouble(order_sla_compliance_pct) * 0.5) +
+            (todouble(otdr_pct) * 0.3) +
+            ((100.0 - todouble(cancellation_rate)) * 0.2),
+            2
+        )
+    | project 
+        performance_date = date_only,
+        sap_system,
+        total_orders,
+        
+        // SLA metrics
+        order_sla_good,
+        order_sla_at_risk,
+        order_sla_breached,
+        order_sla_compliance_pct,
+        order_sla_at_risk_pct,
+        order_sla_breach_pct,
+        
+        // Delay tracking
+        delayed_orders,
+        delay_rate_pct,
+        avg_order_age_hours,
+        
+        // Order lifecycle
+        pending_orders,
+        confirmed_orders,
+        shipped_orders,
+        delivered_orders,
+        cancelled_orders,
+        completion_rate,
+        cancellation_rate,
+        
+        // Priority handling
+        high_priority_orders,
+        high_priority_breached,
+        high_priority_breach_rate,
+        
+        // Performance metrics
+        on_time_deliveries,
+        otdr_pct,
+        avg_time_to_ship,
+        avg_time_to_deliver,
+        
+        // Financial impact
+        total_order_value,
+        breached_order_value,
+        breach_financial_impact_pct,
+        
+        // Overall score
+        overall_performance_score
+}
+
+// 2. CONFIGURE partitioning by date
+.alter materialized-view sla_performance policy partitioning 
+```
+{
+  "PartitionKeys": [
+    {
+      "ColumnName": "performance_date",
+      "Kind": "UniformRange",
+      "Properties": {
+        "RangeSize": "1.00:00:00"
+      }
+    }
+  ]
+}
+```
+
+// 3. CONFIGURE caching for fast queries
+.alter materialized-view sla_performance policy caching hot = 90d
+
+// 4. CREATE summary function for executive dashboard
+.create-or-alter function GetSLAPerformanceSummary(days_back: int = 7) {
+    sla_performance
+    | where performance_date >= ago(days_back * 1d)
+    | summarize 
+        // Aggregate across the period
+        total_orders = sum(total_orders),
+        avg_sla_compliance = avg(order_sla_compliance_pct),
+        avg_otdr = avg(otdr_pct),
+        avg_performance_score = avg(overall_performance_score),
+        total_breached = sum(order_sla_breached),
+        total_at_risk = sum(order_sla_at_risk),
+        avg_delay_rate = avg(delay_rate_pct),
+        avg_completion_rate = avg(completion_rate)
+        by sap_system
+    | extend 
+        performance_trend = case(
+            avg_performance_score >= 95, "Excellent",
+            avg_performance_score >= 85, "Good",
+            avg_performance_score >= 75, "Fair",
+            avg_performance_score >= 60, "Poor",
+            "Critical"
+        )
+    | project 
+        sap_system,
+        total_orders,
+        avg_sla_compliance,
+        avg_otdr,
+        avg_performance_score,
+        performance_trend,
+        total_breached,
+        total_at_risk,
+        avg_delay_rate,
+        avg_completion_rate
+    | order by avg_performance_score desc
+}
+
+print "✓ Materialized view 'sla_performance' created successfully"
+print "✓ Real-time SLA tracking enabled"
+print "✓ Executive performance dashboard ready"
+print "✓ GetSLAPerformanceSummary() function created"

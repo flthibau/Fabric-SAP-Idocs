@@ -1,0 +1,93 @@
+{
+  "status": "Draft",
+  "type": "Analytical",
+  "updateFrequency": "Hourly",
+  "id": "a4f24a45-3443-4f87-a46b-1d4b0b00dce4",
+  "name": "3PL Logistics Analytics",
+  "systemData": {
+    "createdAt": "2025-10-28T19:24:27.7965616Z",
+    "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+    "lastModifiedAt": "2025-10-28T19:24:27.7965616Z",
+    "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+  },
+  "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+  "description": "Real-time analytics data product for Third-Party Logistics (3PL) operations. Provides near real-time KPIs for order performance, shipment tracking, warehouse efficiency, and revenue monitoring. Data is ingested from SAP ERP via Event Hub and processed through medallion architecture (Bronze/Silver/Gold layers).",
+  "businessUse": "Enables 3PL clients and partners to monitor logistics operations in real-time. Key use cases: SLA compliance tracking, shipment visibility, warehouse productivity optimization, invoice aging management, and financial performance analysis.",
+  "contacts": {
+    "owner": [
+      {
+        "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "description": "Operations Manager - 3PL Business Unit"
+      }
+    ],
+    "expert": [
+      {
+        "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "description": "Supply Chain Analyst"
+      }
+    ]
+  },
+  "termsOfUse": [
+    {
+      "url": "https://internal-wiki.example.com/data-governance/usage-policy",
+      "name": "Data Usage Policy"
+    }
+  ],
+  "documentation": [
+    {
+      "url": "https://github.com/flthibau/Fabric-SAP-Idocs/blob/main/governance/3PL-DATA-PRODUCT-DOMAIN-MODEL.md",
+      "name": "Data Product Domain Model"
+    },
+    {
+      "url": "https://github.com/flthibau/Fabric-SAP-Idocs/blob/main/docs/architecture.md",
+      "name": "Architecture Documentation"
+    },
+    {
+      "url": "https://github.com/flthibau/Fabric-SAP-Idocs/blob/main/governance/BUSINESS-GLOSSARY.md",
+      "name": "Business Glossary"
+    }
+  ],
+  "sensitivityLabel": "Internal - Partner Shared",
+  "endorsed": true,
+  "audience": [
+    "DataEngineer",
+    "BIEngineer",
+    "DataAnalyst",
+    "BusinessAnalyst",
+    "Executive"
+  ],
+  "managedAttributes": [
+    {
+      "name": "latency",
+      "value": "<5 minutes end-to-end"
+    },
+    {
+      "name": "availability",
+      "value": "99.9% uptime"
+    },
+    {
+      "name": "dataFreshness",
+      "value": "Real-time (streaming)"
+    },
+    {
+      "name": "coverage",
+      "value": "Orders, Shipments, Warehouse, Invoices"
+    },
+    {
+      "name": "geography",
+      "value": "Global (all 3PL operations)"
+    },
+    {
+      "name": "compliance",
+      "value": "GDPR, SOX"
+    },
+    {
+      "name": "retentionPeriod",
+      "value": "365 days (2555 for invoices)"
+    },
+    {
+      "name": "dataQualityScore",
+      "value": "95%"
+    }
+  ]
+}

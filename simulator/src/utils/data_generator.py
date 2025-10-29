@@ -28,15 +28,28 @@ class DataGenerator:
         """Generate warehouse master data"""
         warehouses = []
         cities = ["Chicago", "Atlanta", "Los Angeles", "Dallas", "Newark"]
+        partner_names = [
+            "LogiTech Warehousing",
+            "Global Storage Solutions",
+            "Premier Logistics Partners",
+            "Integrated Fulfillment Services",
+            "Strategic Distribution Inc"
+        ]
         
         for i in range(self.warehouse_count):
+            # First 2 warehouses are owned, rest are partner-operated
+            is_partner = i >= 2
             warehouses.append({
                 "warehouse_id": f"WH{i+1:03d}",
                 "name": f"{cities[i]} Distribution Center",
                 "city": cities[i],
                 "state": fake.state_abbr(),
                 "country": "US",
-                "postal_code": fake.postcode()
+                "postal_code": fake.postcode(),
+                # B2B Partner Fields
+                "partner_id": f"PARTNER-WH{i+1:03d}" if is_partner else "",
+                "partner_name": partner_names[i] if is_partner else "",
+                "is_partner_operated": is_partner
             })
         
         return warehouses
@@ -61,7 +74,7 @@ class DataGenerator:
         return customers
     
     def _generate_carriers(self) -> List[Dict[str, Any]]:
-        """Generate carrier master data"""
+        """Generate carrier master data (B2B partners)"""
         carrier_names = [
             "FedEx Ground", "UPS", "DHL Express", "USPS Priority",
             "XPO Logistics", "J.B. Hunt", "Schneider", "Werner",
@@ -72,8 +85,9 @@ class DataGenerator:
         
         carriers = []
         for i in range(min(self.carrier_count, len(carrier_names))):
+            carrier_id = f"CARRIER-{carrier_names[i].upper().replace(' ', '-')[:10]}"
             carriers.append({
-                "carrier_id": f"CAR{i+1:03d}",
+                "carrier_id": carrier_id,
                 "name": carrier_names[i],
                 "scac": f"{''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=4))}",
                 "service_level": random.choice(["STANDARD", "EXPRESS", "EXPEDITED", "ECONOMY"])

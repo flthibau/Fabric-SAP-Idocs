@@ -44,7 +44,7 @@ class DESADVSchema(BaseIDocSchema):
         """
         control = self.create_control_record(sender=warehouse["warehouse_id"])
         
-        # E1EDK01 - Document header
+        # E1EDK01 - Document header (Enhanced for B2B partner sharing)
         header = {
             "segnam": "E1EDK01",
             "belnr": delivery_number,
@@ -55,7 +55,13 @@ class DESADVSchema(BaseIDocSchema):
             "volum": sum(item.get("volume_m3", 0) * item.get("quantity", 1) for item in items),
             "voleh": "MTQ",  # Volume unit
             "vsart": carrier["service_level"],
-            "traid": tracking_number
+            "traid": tracking_number,
+            # B2B Partner Fields
+            "carrier_id": carrier.get("carrier_id", ""),
+            "carrier_name": carrier.get("name", ""),
+            "customer_id": customer.get("customer_id", ""),
+            "customer_name": customer.get("name", ""),
+            "partner_access_scope": "CARRIER_CUSTOMER"
         }
         
         # E1EDK14 - Organizational data

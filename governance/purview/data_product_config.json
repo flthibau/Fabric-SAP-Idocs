@@ -1,0 +1,87 @@
+{
+  "id": "3a4cdcb7-ad81-4db0-9a3a-6d181226bd5d",
+  "name": "3PL Real-Time Analytics",
+  "domain": "1800fc8e-0360-4b9a-883a-ea23dcfa38dc",
+  "description": "Real-time analytics data product for Third-Party Logistics operations. Provides near real-time KPIs for order performance, shipment tracking, warehouse efficiency, and revenue monitoring. Data is ingested from SAP ERP via Event Hub and processed through medallion architecture (Bronze/Silver/Gold layers).",
+  "type": "Analytical",
+  "status": "PUBLISHED",
+  "businessUse": "Enables 3PL clients and partners to monitor logistics operations in real-time. Key use cases: SLA compliance tracking, shipment visibility, warehouse productivity optimization, invoice aging management, and financial performance analysis.",
+  "updateFrequency": "Hourly",
+  "audience": [
+    "DataEngineer",
+    "BIEngineer",
+    "DataAnalyst",
+    "BusinessAnalyst",
+    "Executive"
+  ],
+  "endorsed": true,
+  "contacts": {
+    "owner": [
+      {
+        "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "description": "Operations Manager - 3PL Business Unit"
+      }
+    ],
+    "expert": [
+      {
+        "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "description": "Supply Chain Analyst"
+      }
+    ]
+  },
+  "documentation": [
+    {
+      "name": "Data Product Domain Model",
+      "url": "https://github.com/flthibau/Fabric-SAP-Idocs/blob/main/governance/3PL-DATA-PRODUCT-DOMAIN-MODEL.md"
+    },
+    {
+      "name": "Architecture Documentation",
+      "url": "https://github.com/flthibau/Fabric-SAP-Idocs/blob/main/docs/architecture.md"
+    },
+    {
+      "name": "Business Glossary",
+      "url": "https://github.com/flthibau/Fabric-SAP-Idocs/blob/main/governance/BUSINESS-GLOSSARY.md"
+    }
+  ],
+  "termsOfUse": [
+    {
+      "name": "Data Usage Policy",
+      "url": "https://internal-wiki.example.com/data-governance/usage-policy"
+    }
+  ],
+  "managedAttributes": [
+    {
+      "name": "latency",
+      "value": "<5 minutes end-to-end"
+    },
+    {
+      "name": "availability",
+      "value": "99.9% uptime"
+    },
+    {
+      "name": "dataFreshness",
+      "value": "Real-time (streaming)"
+    },
+    {
+      "name": "coverage",
+      "value": "Orders, Shipments, Warehouse, Invoices"
+    },
+    {
+      "name": "geography",
+      "value": "Global (all 3PL operations)"
+    },
+    {
+      "name": "compliance",
+      "value": "GDPR, SOX"
+    },
+    {
+      "name": "retentionPeriod",
+      "value": "365 days (2555 for invoices)"
+    }
+  ],
+  "additionalProperties": {
+    "assetCount": 11
+  },
+  "dataQualityScore": 95.0,
+  "sensitivityLabel": "Internal - Partner Shared"
+}

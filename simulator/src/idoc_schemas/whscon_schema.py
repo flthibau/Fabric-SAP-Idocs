@@ -46,19 +46,23 @@ class WHSCONSchema(BaseIDocSchema):
         """
         control = self.create_control_record(sender=warehouse["warehouse_id"])
         
-        # E1WHC00 - Confirmation header
+        # E1WHC00 - Confirmation header (Enhanced for B2B partner sharing)
         header = {
             "segnam": "E1WHC00",
             "confno": confirmation_number,
             "lgnum": warehouse["warehouse_id"],
             "whstype": operation_type,
-            "refdo c": reference_document,
+            "refdoc": reference_document,
             "status": status,
             "confdat": self.format_date(operation_date),
             "conftim": self.format_time(operation_date),
             "usnam": operator,
             "warehouse_id": warehouse["warehouse_id"],
-            "warehouse_name": warehouse["name"]
+            "warehouse_name": warehouse["name"],
+            # B2B Partner Fields
+            "warehouse_partner_id": warehouse.get("partner_id", ""),  # External warehouse operator ID
+            "warehouse_partner_name": warehouse.get("partner_name", ""),  # Partner company name
+            "partner_access_scope": "WAREHOUSE_PARTNER"  # Defines who can access this data
         }
         
         # E1WHC01 - Operation details

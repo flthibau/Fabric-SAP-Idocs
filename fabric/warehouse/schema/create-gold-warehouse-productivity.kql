@@ -1,0 +1,140 @@
+// ===================================================================
+// GOLD LAYER - Warehouse Productivity Materialized View
+// ===================================================================
+// Real-time warehouse operations KPIs and productivity metrics
+// Optimized for operational dashboards and GraphQL API
+
+// 1. CREATE materialized view for warehouse productivity
+.create async materialized-view with (backfill=true) warehouse_productivity on table idoc_warehouse_silver
+{
+    idoc_warehouse_silver
+    | extend 
+        movement_date_only = startofday(movement_date),
+        movement_hour = bin(movement_date, 1h)
+    | summarize 
+        // Volume metrics
+        total_movements = count(),
+        total_quantity_moved = sum(quantity),
+        total_weight_kg = sum(weight_kg),
+        total_volume_m3 = sum(volume_m3),
+        
+        // Movement type distribution
+        receipts = countif(movement_type == "Receipt"),
+        pickings = countif(movement_type == "Picking"),
+        shippings = countif(movement_type == "Shipping"),
+        transfers = countif(movement_type == "Transfer"),
+        returns = countif(movement_type == "Return"),
+        
+        // Quality metrics
+        movements_requiring_inspection = countif(inspection_required == true),
+        exception_movements = countif(is_exception == true),
+        exception_rate_pct = round(100.0 * countif(is_exception == true) / count(), 2),
+        
+        // Performance metrics
+        avg_processing_time_minutes = avg(processing_time_minutes),
+        min_processing_time = min(processing_time_minutes),
+        max_processing_time = max(processing_time_minutes),
+        
+        // Personnel metrics
+        unique_operators = dcount(operator_id),
+        unique_equipment = dcount(equipment_id),
+        
+        // Location metrics
+        unique_warehouses = dcount(warehouse_id),
+        unique_zones = dcount(zone),
+        
+        // Material diversity
+        unique_materials = dcount(material_id),
+        
+        // Time tracking
+        first_movement = min(movement_date),
+        last_movement = max(movement_date),
+        
+        // Quality status
+        quality_ok = countif(quality_status == "OK"),
+        quality_hold = countif(quality_status == "Hold"),
+        quality_rejected = countif(quality_status == "Rejected")
+        
+        by movement_date_only, warehouse_id, sap_system
+    | extend 
+        // Calculate productivity KPIs
+        movements_per_operator = round(todouble(total_movements) / todouble(unique_operators), 2),
+        quantity_per_operator = round(total_quantity_moved / todouble(unique_operators), 2),
+        movements_per_hour = round(todouble(total_movements) / 24.0, 2),
+        
+        // Calculate efficiency scores
+        quality_pass_rate = round(100.0 * todouble(quality_ok) / todouble(total_movements), 2),
+        inspection_rate = round(100.0 * todouble(movements_requiring_inspection) / todouble(total_movements), 2),
+        
+        // Movement type percentages
+        receipt_pct = round(100.0 * todouble(receipts) / todouble(total_movements), 2),
+        picking_pct = round(100.0 * todouble(pickings) / todouble(total_movements), 2),
+        shipping_pct = round(100.0 * todouble(shippings) / todouble(total_movements), 2),
+        transfer_pct = round(100.0 * todouble(transfers) / todouble(total_movements), 2),
+        return_pct = round(100.0 * todouble(returns) / todouble(total_movements), 2),
+        
+        // Operational hours
+        operational_hours = datetime_diff('hour', last_movement, first_movement)
+    | project 
+        movement_date = movement_date_only,
+        warehouse_id,
+        sap_system,
+        total_movements,
+        total_quantity_moved,
+        total_weight_kg,
+        total_volume_m3,
+        receipts,
+        pickings,
+        shippings,
+        transfers,
+        returns,
+        receipt_pct,
+        picking_pct,
+        shipping_pct,
+        transfer_pct,
+        return_pct,
+        movements_requiring_inspection,
+        exception_movements,
+        exception_rate_pct,
+        avg_processing_time_minutes,
+        min_processing_time,
+        max_processing_time,
+        unique_operators,
+        unique_equipment,
+        unique_zones,
+        unique_materials,
+        movements_per_operator,
+        quantity_per_operator,
+        movements_per_hour,
+        quality_ok,
+        quality_hold,
+        quality_rejected,
+        quality_pass_rate,
+        inspection_rate,
+        operational_hours,
+        first_movement,
+        last_movement
+}
+
+// 2. CONFIGURE partitioning by date
+.alter materialized-view warehouse_productivity policy partitioning 
+```
+{
+  "PartitionKeys": [
+    {
+      "ColumnName": "movement_date",
+      "Kind": "UniformRange",
+      "Properties": {
+        "RangeSize": "1.00:00:00"
+      }
+    }
+  ]
+}
+```
+
+// 3. CONFIGURE caching
+.alter materialized-view warehouse_productivity policy caching hot = 90d
+
+print "✓ Materialized view 'warehouse_productivity' created successfully"
+print "✓ Warehouse KPIs and productivity metrics enabled"
+print "✓ Real-time operational insights available"

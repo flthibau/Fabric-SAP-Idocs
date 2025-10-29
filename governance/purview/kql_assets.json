@@ -1,0 +1,61 @@
+[
+  {
+    "description": "Created by fab",
+    "objectType": "Tables",
+    "updateBy": "ServiceAdmin",
+    "id": "12c6bc9c-c29c-4e26-b443-9df6f6f60000",
+    "collectionId": "yabwox",
+    "displayText": "kql_databases",
+    "isIndexed": true,
+    "qualifiedName": "https://app.fabric.microsoft.com/groups/5f4c6efd-f758-489e-8164-067d206cdbfd/lakehouses/c22f34f6-0604-4a15-9c90-9619ba784283/tables/kql_databases",
+    "entityType": "fabric_lakehouse_table",
+    "updateTime": 1759238238378,
+    "domainId": "stpurview",
+    "assetType": [
+      "Fabric"
+    ],
+    "createBy": "ServiceAdmin",
+    "createTime": 1759238234741,
+    "name": "kql_databases",
+    "@search.score": 1.0
+  },
+  {
+    "description": "Created by fab",
+    "objectType": "Tables",
+    "updateBy": "ServiceAdmin",
+    "id": "bc883bd9-316a-43bc-bd68-c1f6f6f60000",
+    "collectionId": "yabwox",
+    "displayText": "eventhouses",
+    "isIndexed": true,
+    "qualifiedName": "https://app.fabric.microsoft.com/groups/5f4c6efd-f758-489e-8164-067d206cdbfd/lakehouses/c22f34f6-0604-4a15-9c90-9619ba784283/tables/eventhouses",
+    "entityType": "fabric_lakehouse_table",
+    "updateTime": 1759238238781,
+    "domainId": "stpurview",
+    "assetType": [
+      "Fabric"
+    ],
+    "createBy": "ServiceAdmin",
+    "createTime": 1759238234737,
+    "name": "eventhouses",
+    "@search.score": 1.0
+  },
+  {
+    "description": "kqldbsapidoc",
+    "updateBy": "ServiceAdmin",
+    "id": "123e0a5f-14be-4587-a7fb-e0dfa47eab82",
+    "collectionId": "yabwox",
+    "displayText": "kqldbsapidoc",
+    "isIndexed": true,
+    "qualifiedName": "https://app.fabric.microsoft.com/groups/ad53e547-23dc-46b0-ab5f-2acbaf0eec64/databases/5c2c08ee-cb8f-4248-a1c8-ea35a4e6e057",
+    "entityType": "fabric_kusto_database",
+    "updateTime": 1761560010216,
+    "domainId": "stpurview",
+    "assetType": [
+      "Fabric"
+    ],
+    "createBy": "ServiceAdmin",
+    "createTime": 1761560010216,
+    "name": "kqldbsapidoc",
+    "@search.score": 1.0
+  }
+]

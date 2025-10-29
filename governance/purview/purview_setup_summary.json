@@ -1,0 +1,157 @@
+{
+  "glossary": null,
+  "terms": [
+    {
+      "name": "Order",
+      "status": "existing"
+    },
+    {
+      "name": "Shipment",
+      "status": "existing"
+    },
+    {
+      "name": "SLA Compliance %",
+      "status": "existing"
+    },
+    {
+      "name": "On-Time Delivery %",
+      "status": "existing"
+    },
+    {
+      "name": "Warehouse Productivity",
+      "status": "existing"
+    },
+    {
+      "name": "Days Sales Outstanding (DSO)",
+      "status": "existing"
+    }
+  ],
+  "collections": [
+    {
+      "name": "Bronze",
+      "friendlyName": "Bronze",
+      "description": "3PL Data Product - Bronze",
+      "parentCollection": {
+        "type": "CollectionReference",
+        "referenceName": "stpurview"
+      },
+      "systemData": {
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "createdByType": "User",
+        "createdAt": "2025-10-27T10:54:15.4646761Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedByType": "User",
+        "lastModifiedAt": "2025-10-28T06:57:55.8075435Z"
+      },
+      "collectionProvisioningState": "Succeeded"
+    },
+    {
+      "name": "Silver",
+      "friendlyName": "Silver",
+      "description": "3PL Data Product - Silver",
+      "parentCollection": {
+        "type": "CollectionReference",
+        "referenceName": "stpurview"
+      },
+      "systemData": {
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "createdByType": "User",
+        "createdAt": "2025-10-27T10:54:18.3089058Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedByType": "User",
+        "lastModifiedAt": "2025-10-28T06:57:58.1246018Z"
+      },
+      "collectionProvisioningState": "Succeeded"
+    },
+    {
+      "name": "Gold",
+      "friendlyName": "Gold",
+      "description": "3PL Data Product - Gold",
+      "parentCollection": {
+        "type": "CollectionReference",
+        "referenceName": "stpurview"
+      },
+      "systemData": {
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "createdByType": "User",
+        "createdAt": "2025-10-27T10:54:20.6433515Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedByType": "User",
+        "lastModifiedAt": "2025-10-28T06:58:00.245621Z"
+      },
+      "collectionProvisioningState": "Succeeded"
+    },
+    {
+      "name": "API",
+      "friendlyName": "API",
+      "description": "3PL Data Product - API",
+      "parentCollection": {
+        "type": "CollectionReference",
+        "referenceName": "stpurview"
+      },
+      "systemData": {
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "createdByType": "User",
+        "createdAt": "2025-10-27T10:54:22.7176299Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedByType": "User",
+        "lastModifiedAt": "2025-10-28T06:58:04.8250626Z"
+      },
+      "collectionProvisioningState": "Succeeded"
+    }
+  ],
+  "data_sources": [
+    {
+      "properties": {
+        "tenant": "38de1b20-8309-40ba-9584-5d9fcb7203b4",
+        "host": "api.powerbi.com",
+        "createdAt": "2025-09-30T12:52:42.6495233Z",
+        "lastModifiedAt": "2025-09-30T12:52:42.6495233Z",
+        "parentCollection": null,
+        "collection": {
+          "lastModifiedAt": "2025-09-30T12:52:42.6495233Z",
+          "referenceName": "yabwox",
+          "type": "CollectionReference"
+        },
+        "dataSourceCollectionMovingState": 0
+      },
+      "kind": "PowerBI",
+      "creationType": "Manual",
+      "id": "datasources/Fabric-JAc",
+      "name": "Fabric-JAc"
+    },
+    {
+      "properties": {
+        "endpoint": "https://6rxha4yxc46ezfypjp5sfvszzi-lc27f4a2mlbevckqaygbfn6yoa.z1.fabric.microsoft.com",
+        "enableAzureDataExplorerFunctionsScan": false,
+        "resourceGroup": null,
+        "subscriptionId": null,
+        "location": null,
+        "resourceName": null,
+        "resourceId": null,
+        "dataUseGovernance": "Disabled",
+        "createdAt": "2025-10-27T12:52:19.9102805Z",
+        "lastModifiedAt": "2025-10-27T12:52:19.9102805Z",
+        "parentCollection": null,
+        "collection": {
+          "lastModifiedAt": "2025-10-27T12:52:19.9102805Z",
+          "referenceName": "Bronze",
+          "type": "CollectionReference"
+        },
+        "dataSourceCollectionMovingState": 0
+      },
+      "kind": "AzureDataExplorer",
+      "creationType": "Manual",
+      "id": "datasources/Eventhouse-3PL-Analytics",
+      "name": "Eventhouse-3PL-Analytics"
+    }
+  ],
+  "scans": [
+    {
+      "scanName": "Scan-DKT",
+      "runId": "1449d2fd-42d7-4207-8fc1-758efc8d9bab",
+      "status": "Running"
+    }
+  ],
+  "lineage": []
+}

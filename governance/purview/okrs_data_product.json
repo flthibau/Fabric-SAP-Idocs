@@ -1,0 +1,209 @@
+{
+  "objectives": [
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:14.7556299Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:14.7556299Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "ffc86c4e-e405-450a-be12-d7be0a98be6e",
+      "definition": "Achieve operational excellence in 3PL logistics operations through real-time monitoring, SLA compliance, and data-driven decision making. Ensure high-quality service delivery with minimal delays and maximum efficiency.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-26T20:46:14.444346Z",
+      "contacts": {
+        "owner": [
+          {
+            "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+            "description": "3PL Operations Manager"
+          }
+        ]
+      }
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:37.9538034Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:37.9538034Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "7561081b-0008-42eb-bd25-323e8520a000",
+      "definition": "Maximize customer satisfaction by providing accurate, timely, and transparent logistics data. Enable customers and partners to track their shipments, monitor performance, and resolve issues quickly.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-26T20:46:37.929584Z",
+      "contacts": {
+        "owner": [
+          {
+            "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+            "description": "3PL Operations Manager"
+          }
+        ]
+      }
+    },
+    {
+      "status": "Published",
+      "systemData": {
+        "createdAt": "2025-10-28T19:47:01.8483514Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:47:01.8483514Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "e01a2e92-225f-4e52-95fd-355f4c5e8adb",
+      "definition": "Drive adoption of the 3PL Real-Time Analytics Data Product across internal teams and external partners. Increase usage, onboard new partners, and demonstrate business value through measurable outcomes.",
+      "domain": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "targetDate": "2026-04-26T20:47:01.795742Z",
+      "contacts": {
+        "owner": [
+          {
+            "id": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+            "description": "3PL Operations Manager"
+          }
+        ]
+      }
+    }
+  ],
+  "keyResults": [
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:20.4542187Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:20.4542187Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "9047a81d-2003-4151-b658-8baaad9931a3",
+      "definition": "Maintain Service Level Agreement compliance rate at or above 95% across all customers and service types. Measured by comparing actual delivery times against committed SLAs.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 92.0,
+      "goal": 95.0,
+      "max": 100.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:25.5927939Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:25.5927939Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "ce3d8af7-d53c-4477-aa18-644518d299d3",
+      "definition": "Achieve on-time delivery rate of 92% or higher. Measured as percentage of shipments delivered within the promised time window.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 89.0,
+      "goal": 92.0,
+      "max": 100.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:31.2434508Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:31.2434508Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "316677f0-1927-4a8a-aba5-9953b0a28ca3",
+      "definition": "Maintain real-time data freshness with end-to-end latency below 5 minutes from source system to analytics layer. Critical for operational decision-making.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 4.2,
+      "goal": 5.0,
+      "max": 5.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:43.1382238Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:43.1382238Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "5fbfa46d-8971-4a04-a70f-21591c8fa7fb",
+      "definition": "Achieve customer satisfaction score of 4.5 out of 5 or higher based on quarterly surveys measuring data quality, timeliness, and usability of the analytics platform.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 4.3,
+      "goal": 4.5,
+      "max": 5.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:49.9387845Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:49.9387845Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "e73b1467-0bdf-444e-9086-5c529f50dc52",
+      "definition": "Maintain data quality score at 95% or above, measured by completeness, accuracy, consistency, and timeliness of data across all tables (Silver and Gold layers).",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 94.0,
+      "goal": 95.0,
+      "max": 100.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-28T19:46:55.4320079Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:46:55.4320079Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "3d196219-c9fb-4a13-9d7b-bd2ef91adb96",
+      "definition": "Achieve invoice accuracy rate of 99% or higher, reducing billing disputes and improving cash flow. Measured as percentage of invoices issued without errors.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 98.0,
+      "goal": 99.0,
+      "max": 100.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-28T19:47:06.80786Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:47:06.80786Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "9ae9985f-c395-4ad4-bad7-6df4d6bf48f7",
+      "definition": "Grow active monthly users to 50 or more, including internal analysts, customer service teams, and external partner users accessing the data product.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 35.0,
+      "goal": 50.0,
+      "max": 100.0
+    },
+    {
+      "status": "Behind",
+      "systemData": {
+        "createdAt": "2025-10-28T19:47:12.4446157Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:47:12.4446157Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "65ae5d2d-4b4a-4a2a-8c69-af698a9bff74",
+      "definition": "Achieve 1000+ queries per day against the Data Product, demonstrating active usage and business value. Track via Fabric/Purview usage metrics.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 650.0,
+      "goal": 1000.0,
+      "max": 2000.0
+    },
+    {
+      "status": "OnTrack",
+      "systemData": {
+        "createdAt": "2025-10-28T19:47:18.3799538Z",
+        "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+        "lastModifiedAt": "2025-10-28T19:47:18.3799538Z",
+        "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+      },
+      "id": "1249d44f-5436-48f9-9419-e6c034d4ab72",
+      "definition": "Onboard 10 or more B2B partners (customers, carriers, warehouse operators) with governed access to the Data Product for self-service analytics.",
+      "domainId": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+      "progress": 6.0,
+      "goal": 10.0,
+      "max": 20.0
+    }
+  ],
+  "summary": {
+    "totalObjectives": 3,
+    "totalKeyResults": 9,
+    "createdAt": "2025-10-28T20:47:20.237762"
+  }
+}

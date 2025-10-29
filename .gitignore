@@ -104,6 +104,23 @@ appsettings.local.json
 simulator/config/config.yaml
 infrastructure/DEPLOYMENT_SUMMARY.md
 infrastructure/scripts/DEPLOYMENT_SUMMARY.md
+infrastructure/NEW_TENANT_CONFIG.md
+infrastructure/CONFIGURE_FABRIC_CONNECTION.md
+infrastructure/UPDATE_EVENTSTREAM_CONNECTION.md
+fabric/eventstream/CONNECTION_INFO.md
+fabric/eventstream/JSON_SCHEMA_ANALYSIS.md
+
+# Temporary and test files
+temp_*.json
+lakehouse_structure.json
+translate-to-english.ps1
+*_results*.json
+test_results*.json
+api_test_results.json
+
+# Archive folders (experimental code)
+archive/
+experimental/
 
 # Logs
 logs/

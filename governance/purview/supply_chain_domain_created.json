@@ -1,0 +1,45 @@
+{
+  "status": "Published",
+  "type": "LineOfBusiness",
+  "id": "041de34f-62cf-4c8a-9a17-d1cc823e9538",
+  "name": "Supply Chain",
+  "systemData": {
+    "createdAt": "2025-10-28T18:30:36.9972278Z",
+    "createdBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f",
+    "lastModifiedAt": "2025-10-28T18:30:36.9972278Z",
+    "lastModifiedBy": "bd259c61-df2c-4f56-a455-f2c15a86e18f"
+  },
+  "description": "Global Supply Chain business domain encompassing logistics, warehousing, transportation, and inventory management. This domain provides a unified governance framework for all supply chain data products including 3PL operations, manufacturing, procurement, and distribution.",
+  "isRestricted": false,
+  "isStagingDomain": false,
+  "managedAttributes": [
+    {
+      "name": "businessArea",
+      "value": "Operations"
+    },
+    {
+      "name": "organizationalUnit",
+      "value": "Supply Chain & Logistics"
+    },
+    {
+      "name": "criticality",
+      "value": "High"
+    },
+    {
+      "name": "dataClassification",
+      "value": "Confidential"
+    },
+    {
+      "name": "regulatoryCompliance",
+      "value": "GDPR, SOX, Industry Standards"
+    },
+    {
+      "name": "sharingScope",
+      "value": "Internal + B2B Partners"
+    },
+    {
+      "name": "industryVertical",
+      "value": "Third-Party Logistics (3PL)"
+    }
+  ]
+}

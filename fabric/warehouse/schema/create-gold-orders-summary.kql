@@ -1,0 +1,122 @@
+// ===================================================================
+// GOLD LAYER - Orders Daily Summary Materialized View
+// ===================================================================
+// Real-time aggregated metrics for order operations
+// Optimized for GraphQL API queries and dashboards
+
+// 1. CREATE materialized view for daily order metrics
+.create async materialized-view with (backfill=true) orders_daily_summary on table idoc_orders_silver
+{
+    idoc_orders_silver
+    | extend order_date_only = startofday(order_date)
+    | summarize 
+        // Volume metrics
+        total_orders = count(),
+        total_order_value = sum(total_amount),
+        avg_order_value = avg(total_amount),
+        
+        // Order composition
+        total_lines = sum(total_lines),
+        total_quantity = sum(total_quantity),
+        total_weight_kg = sum(total_weight_kg),
+        
+        // Customer metrics
+        unique_customers = dcount(customer_id),
+        
+        // Status distribution
+        pending_orders = countif(order_status == "Pending"),
+        confirmed_orders = countif(order_status == "Confirmed"),
+        shipped_orders = countif(order_status == "Shipped"),
+        delivered_orders = countif(order_status == "Delivered"),
+        cancelled_orders = countif(order_status == "Cancelled"),
+        
+        // SLA performance
+        sla_good = countif(sla_status == "Good"),
+        sla_at_risk = countif(sla_status == "At Risk"),
+        sla_breached = countif(sla_status == "Breached"),
+        sla_compliance_pct = round(100.0 * countif(sla_status == "Good") / count(), 2),
+        
+        // Delay metrics
+        delayed_orders = countif(is_delayed == true),
+        avg_order_age_hours = avg(order_age_hours),
+        
+        // Priority distribution
+        high_priority = countif(priority == "High"),
+        medium_priority = countif(priority == "Medium"),
+        low_priority = countif(priority == "Low"),
+        
+        // First and last order times
+        first_order_time = min(order_date),
+        last_order_time = max(order_date),
+        
+        // Currency breakdown
+        currencies_used = make_set(currency)
+        
+        by order_date_only, sap_system
+    | extend 
+        // Calculate additional KPIs
+        avg_lines_per_order = round(todouble(total_lines) / todouble(total_orders), 2),
+        avg_quantity_per_order = round(todouble(total_quantity) / todouble(total_orders), 2),
+        avg_weight_per_order = round(total_weight_kg / todouble(total_orders), 2),
+        order_completion_rate = round(100.0 * todouble(delivered_orders) / todouble(total_orders), 2),
+        order_cancellation_rate = round(100.0 * todouble(cancelled_orders) / todouble(total_orders), 2),
+        
+        // Trend indicators
+        order_velocity_per_hour = round(todouble(total_orders) / 24.0, 2)
+    | project 
+        order_date = order_date_only,
+        sap_system,
+        total_orders,
+        total_order_value,
+        avg_order_value,
+        total_lines,
+        total_quantity,
+        total_weight_kg,
+        unique_customers,
+        pending_orders,
+        confirmed_orders,
+        shipped_orders,
+        delivered_orders,
+        cancelled_orders,
+        sla_good,
+        sla_at_risk,
+        sla_breached,
+        sla_compliance_pct,
+        delayed_orders,
+        avg_order_age_hours,
+        high_priority,
+        medium_priority,
+        low_priority,
+        avg_lines_per_order,
+        avg_quantity_per_order,
+        avg_weight_per_order,
+        order_completion_rate,
+        order_cancellation_rate,
+        order_velocity_per_hour,
+        first_order_time,
+        last_order_time,
+        currencies_used
+}
+
+// 2. ENABLE auto-refresh every 5 minutes
+.alter materialized-view orders_daily_summary policy partitioning 
+```
+{
+  "PartitionKeys": [
+    {
+      "ColumnName": "order_date",
+      "Kind": "UniformRange",
+      "Properties": {
+        "RangeSize": "1.00:00:00"
+      }
+    }
+  ]
+}
+```
+
+// 3. CONFIGURE caching for fast queries
+.alter materialized-view orders_daily_summary policy caching hot = 90d
+
+print "✓ Materialized view 'orders_daily_summary' created successfully"
+print "✓ Real-time order metrics aggregation enabled"
+print "✓ Daily summaries with SLA tracking"

@@ -1,0 +1,210 @@
+// ===================================================================
+// ADD B2B PARTNER COLUMNS TO EVENTHOUSE TABLES
+// ===================================================================
+// This script adds B2B partner identifier columns to enable
+// multi-tenant data filtering for external partners (carriers, 
+// warehouse operators, customers)
+//
+// EXECUTE IN FABRIC EVENTHOUSE: kqldbsapidoc
+// ===================================================================
+
+print "=========================================="
+print "  STEP 1: Update Helper Functions"
+print "=========================================="
+
+// Enhanced function to extract carrier information from SHPMNT/DESADV
+.create-or-alter function ExtractCarrierInfo(dataObj: dynamic) {
+    let shpmntHeader = dataObj.E1SHP00;
+    let desadvHeader = dataObj.E1EDK01;
+    pack(
+        "carrier_id", coalesce(
+            tostring(shpmntHeader.carrier_id),
+            tostring(desadvHeader.carrier_id),
+            ""
+        ),
+        "carrier_name", coalesce(
+            tostring(shpmntHeader.carrier_name),
+            tostring(desadvHeader.carrier_name),
+            ""
+        )
+    )
+}
+
+// Enhanced function to extract customer information from all IDoc types
+.create-or-alter function ExtractCustomerInfo(dataObj: dynamic) {
+    let shpmntHeader = dataObj.E1SHP00;
+    let ordersHeader = dataObj.E1EDK01;
+    let desadvHeader = dataObj.E1EDK01;
+    let invoiceHeader = dataObj.E1EDK01;
+    pack(
+        "customer_id", coalesce(
+            tostring(shpmntHeader.customer_id),
+            tostring(ordersHeader.customer_id),
+            tostring(desadvHeader.customer_id),
+            tostring(invoiceHeader.customer_id),
+            ""
+        ),
+        "customer_name", coalesce(
+            tostring(shpmntHeader.customer_name),
+            tostring(ordersHeader.customer_name),
+            tostring(desadvHeader.customer_name),
+            tostring(invoiceHeader.customer_name),
+            ""
+        )
+    )
+}
+
+// Enhanced function to extract warehouse partner information from WHSCON
+.create-or-alter function ExtractWarehousePartnerInfo(dataObj: dynamic) {
+    let whsconHeader = dataObj.E1WHC00;
+    pack(
+        "warehouse_partner_id", coalesce(
+            tostring(whsconHeader.warehouse_partner_id),
+            ""
+        ),
+        "warehouse_partner_name", coalesce(
+            tostring(whsconHeader.warehouse_partner_name),
+            ""
+        )
+    )
+}
+
+// Enhanced function to extract partner access scope
+.create-or-alter function ExtractPartnerAccessScope(dataObj: dynamic, message_type: string) {
+    // Determine scope based on message type and content
+    case(
+        message_type == "SHPMNT" or message_type == "DESADV", 
+            coalesce(tostring(dataObj.E1SHP00.partner_access_scope), tostring(dataObj.E1EDK01.partner_access_scope), "CARRIER_CUSTOMER"),
+        message_type == "ORDERS" or message_type == "INVOIC",
+            coalesce(tostring(dataObj.E1EDK01.partner_access_scope), "CUSTOMER"),
+        message_type == "WHSCON",
+            coalesce(tostring(dataObj.E1WHC00.partner_access_scope), "WAREHOUSE_PARTNER"),
+        ""
+    )
+}
+
+print "✓ Helper functions created/updated"
+print ""
+
+print "=========================================="
+print "  STEP 2: Recreate IDocSummary View"
+print "=========================================="
+print "  (with B2B partner columns)"
+print ""
+
+// Drop existing materialized view
+.drop materialized-view IDocSummary ifexists
+
+// Recreate with B2B partner columns
+.create materialized-view with (backfill=true) IDocSummary on table idoc_raw
+{
+    idoc_raw
+    | extend IDocNumber = GetIDocNumber(control)
+    | extend Header = ParseIDocHeader(control)
+    | extend CarrierInfo = ExtractCarrierInfo(data)
+    | extend CustomerInfo = ExtractCustomerInfo(data)
+    | extend WarehousePartnerInfo = ExtractWarehousePartnerInfo(data)
+    | extend PartnerAccessScope = ExtractPartnerAccessScope(data, message_type)
+    | project 
+        // Original columns
+        timestamp,
+        idoc_type,
+        message_type,
+        sap_system,
+        IDocNumber,
+        Header,
+        // B2B Partner columns (extracted from JSON)
+        carrier_id = tostring(CarrierInfo.carrier_id),
+        carrier_name = tostring(CarrierInfo.carrier_name),
+        customer_id = tostring(CustomerInfo.customer_id),
+        customer_name = tostring(CustomerInfo.customer_name),
+        warehouse_partner_id = tostring(WarehousePartnerInfo.warehouse_partner_id),
+        warehouse_partner_name = tostring(WarehousePartnerInfo.warehouse_partner_name),
+        partner_access_scope = PartnerAccessScope,
+        // Metadata
+        EventProcessedUtcTime,
+        PartitionId,
+        // Keep full data for downstream processing
+        data
+}
+
+print "✓ Materialized view IDocSummary recreated with B2B columns"
+print ""
+
+print "=========================================="
+print "  STEP 3: Validation Queries"
+print "=========================================="
+print ""
+
+// Query to verify B2B columns are populated
+IDocSummary
+| where timestamp > ago(1d)
+| summarize 
+    TotalIDocs = count(),
+    ShipmentsWithCarrier = countif(carrier_id != ""),
+    OrdersWithCustomer = countif(customer_id != "" and message_type in ("ORDERS", "INVOIC")),
+    WarehouseWithPartner = countif(warehouse_partner_id != "" and message_type == "WHSCON")
+| extend 
+    CarrierCoverage = strcat(round(ShipmentsWithCarrier * 100.0 / TotalIDocs, 2), "%"),
+    CustomerCoverage = strcat(round(OrdersWithCustomer * 100.0 / TotalIDocs, 2), "%"),
+    WarehouseCoverage = strcat(round(WarehouseWithPartner * 100.0 / TotalIDocs, 2), "%")
+| project 
+    TotalIDocs,
+    CarrierCoverage,
+    CustomerCoverage,
+    WarehouseCoverage
+
+print ""
+print "=========================================="
+print "  STEP 4: Sample Partner Data"
+print "=========================================="
+print ""
+
+// Sample shipments with carrier information
+print "Sample Shipments (Carriers):"
+IDocSummary
+| where message_type == "SHPMNT" and carrier_id != ""
+| take 5
+| project 
+    timestamp,
+    IDocNumber,
+    carrier_id,
+    carrier_name,
+    customer_id,
+    customer_name,
+    partner_access_scope
+
+print ""
+print "Sample Orders (Customers):"
+IDocSummary
+| where message_type == "ORDERS" and customer_id != ""
+| take 5
+| project 
+    timestamp,
+    IDocNumber,
+    customer_id,
+    customer_name,
+    partner_access_scope
+
+print ""
+print "Sample Warehouse Confirmations (Partners):"
+IDocSummary
+| where message_type == "WHSCON" and warehouse_partner_id != ""
+| take 5
+| project 
+    timestamp,
+    IDocNumber,
+    warehouse_partner_id,
+    warehouse_partner_name,
+    partner_access_scope
+
+print ""
+print "=========================================="
+print "  ✓ B2B PARTNER COLUMNS ADDED"
+print "=========================================="
+print ""
+print "Next Steps:"
+print "1. Update Silver table schemas (idoc_shipments_silver, etc.)"
+print "2. Update Gold Materialized Lake Views"
+print "3. Create partner-specific Gold views"
+print ""

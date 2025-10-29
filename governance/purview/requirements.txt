@@ -1,0 +1,10 @@
+# Purview Automation Dependencies
+
+# Azure Authentication
+azure-identity==1.15.0
+
+# HTTP Requests
+requests==2.31.0
+
+# YAML parsing
+PyYAML==6.0.1

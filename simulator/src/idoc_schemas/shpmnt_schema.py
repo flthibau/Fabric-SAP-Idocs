@@ -50,17 +50,22 @@ class SHPMNTSchema(BaseIDocSchema):
         """
         control = self.create_control_record(sender=warehouse["warehouse_id"])
         
-        # E1SHP00 - Shipment header
+        # E1SHP00 - Shipment header (Enhanced for B2B partner sharing)
         header = {
             "segnam": "E1SHP00",
             "tknum": shipment_number,
             "shtyp": "0001",  # Shipment type
             "vsart": carrier["service_level"],
-            "tdlnr": carrier["carrier_id"],
-            "signi": tracking_number,
+            "tdlnr": carrier["carrier_id"],  # Carrier ID for partner filtering
+            "signi": tracking_number,  # Carrier tracking number for external access
             "shpsts": shipment_status,
             "datbg": self.format_date(pickup_date),
-            "uatbg": self.format_time(pickup_date)
+            "uatbg": self.format_time(pickup_date),
+            # B2B Partner Fields
+            "carrier_name": carrier.get("name", ""),  # Carrier company name
+            "customer_id": customer.get("customer_id", ""),  # Customer ID for filtering
+            "customer_name": customer.get("name", ""),  # Customer company name
+            "partner_access_scope": "CARRIER_CUSTOMER"  # Defines who can access this shipment
         }
         
         if delivery_date:

@@ -1,0 +1,193 @@
+// ================================================================
+// MISE À JOUR: Extraction des items E1WHC10 pour idoc_warehouse_silver
+// ================================================================
+// 
+// OBJECTIF: Éclater les items du segment E1WHC10 pour avoir une ligne
+//           par item avec material_id, quantity, batch_number, etc.
+//
+// IMPACT:   - Une ligne par item (au lieu d'une ligne par mouvement)
+//           - Colonnes item remplies: material_id, material_description,
+//             quantity, batch_number, storage_location
+//           - Meilleur pour analytics B2B et reporting partenaires
+// ================================================================
+
+print "=========================================="
+print "MISE À JOUR WAREHOUSE ITEMS EXTRACTION"
+print "=========================================="
+print ""
+
+// ---------------------------------------------------------
+// ÉTAPE 1: Modifier la table pour ajouter colonnes manquantes
+// ---------------------------------------------------------
+
+print "ÉTAPE 1: Ajout des colonnes d'items manquantes..."
+
+.alter-merge table idoc_warehouse_silver (
+    // Colonnes existantes conservées automatiquement
+    
+    // Nouvelles colonnes pour détails items
+    item_number: string,
+    material_description: string,
+    batch_number: string,
+    storage_location: string,
+    storage_type: string,
+    bin_location: string,
+    target_quantity: decimal,
+    variance_quantity: decimal,
+    weight_total_kg: decimal
+)
+
+print "✓ Colonnes d'items ajoutées"
+print ""
+
+// ---------------------------------------------------------
+// ÉTAPE 2: Créer nouvelle fonction d'extraction avec E1WHC10
+// ---------------------------------------------------------
+
+print "ÉTAPE 2: Création fonction ExtractWarehouseData avec items..."
+
+.create-or-alter function ExtractWarehouseData(raw_data: dynamic, raw_control: dynamic) {
+    let header = raw_data.E1WHC00[0];
+    
+    // Filtrer uniquement les segments E1WHC10 (items)
+    // Note: data.E1WHC10 contient tous les segments (E1WHC10, E1WHC11, E1WHC12, E1WHC13)
+    // On filtre avec segnam == "E1WHC10"
+    let all_segments = todynamic(raw_data.E1WHC10);
+    let items = array_select(all_segments, x -> tostring(x.segnam) == "E1WHC10");
+    
+    // Éclater les items (mv-expand sera fait dans l'update policy)
+    pack(
+        // Données header (mouvement)
+        "movement_id", tostring(header.confno),
+        "warehouse_id", tostring(header.lgnum),
+        "movement_type", tostring(header.whstype),
+        "reference_document", tostring(header.refdoc),
+        "movement_status", tostring(header.status),
+        "movement_date", todatetime(strcat(header.confdat, header.conftim)),
+        "operator_id", tostring(header.usnam),
+        
+        // Items array (filtré, sera éclaté par mv-expand)
+        "items", items,
+        
+        // Métadonnées
+        "sap_system", tostring(raw_control.sndprn),
+        "idoc_type", tostring(raw_control.idoctyp),
+        "idoc_number", tostring(raw_control.docnum)
+    )
+}
+
+print "✓ ExtractWarehouseData créée (base)"
+print ""
+
+// ---------------------------------------------------------
+// ÉTAPE 3: Créer fonction B2B avec extraction items
+// ---------------------------------------------------------
+
+print "ÉTAPE 3: Création fonction ExtractWarehouseDataB2B avec items..."
+
+.create-or-alter function ExtractWarehouseDataB2B(raw_data: dynamic, raw_control: dynamic) {
+    let base_data = ExtractWarehouseData(raw_data, raw_control);
+    let header = raw_data.E1WHC00[0];
+    
+    // Ajouter les colonnes B2B au niveau header
+    bag_merge(
+        base_data,
+        pack(
+            "warehouse_partner_id", tostring(header.warehouse_partner_id),
+            "warehouse_partner_name", tostring(header.warehouse_partner_name),
+            "partner_access_scope", tostring(header.partner_access_scope)
+        )
+    )
+}
+
+print "✓ ExtractWarehouseDataB2B créée (avec B2B)"
+print ""
+
+// ---------------------------------------------------------
+// ÉTAPE 4: Mettre à jour l'update policy avec mv-expand
+// ---------------------------------------------------------
+
+print "ÉTAPE 4: Mise à jour de l'update policy avec éclatement items..."
+
+.alter table idoc_warehouse_silver policy update 
+@'[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": 
+        "idoc_raw \
+        | where message_type == \"WHSCON\" \
+        | extend extracted = ExtractWarehouseDataB2B(data, control) \
+        | where array_length(extracted.items) > 0 \
+        | mv-expand item = extracted.items to typeof(dynamic) \
+        | where isnotempty(item) \
+        | extend \
+            confirmation_number = tostring(extracted.movement_id), \
+            warehouse_id = tostring(extracted.warehouse_id), \
+            warehouse_partner_id = tostring(extracted.warehouse_partner_id), \
+            warehouse_partner_name = tostring(extracted.warehouse_partner_name), \
+            partner_access_scope = tostring(extracted.partner_access_scope), \
+            operation_type = tostring(extracted.movement_type), \
+            reference_document = tostring(extracted.reference_document), \
+            item_number = tostring(item.itemno), \
+            material_id = tostring(item.matnr), \
+            material_description = tostring(item.maktx), \
+            quantity = toint(todouble(item.confqty)), \
+            target_quantity = todecimal(item.targetqty), \
+            variance_quantity = todecimal(item.variance), \
+            unit_of_measure = tostring(item.unit), \
+            batch_number = tostring(item.charg), \
+            storage_location = tostring(item.lgort), \
+            storage_type = tostring(item.werks), \
+            bin_location = \"\", \
+            weight_kg = todecimal(item.weight), \
+            weight_total_kg = todecimal(item.weight), \
+            operation_date = todatetime(extracted.movement_date), \
+            confirmation_date = todatetime(extracted.movement_date), \
+            status = tostring(extracted.movement_status), \
+            operator = tostring(extracted.operator_id), \
+            sap_system = tostring(extracted.sap_system), \
+            idoc_type = tostring(extracted.idoc_type), \
+            idoc_number = tostring(extracted.idoc_number), \
+            ingestion_timestamp = now(), \
+            raw_control = control, \
+            raw_data = data \
+        | project-away item, extracted",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]'
+
+print "✓ Update policy modifiée avec mv-expand sur items"
+print ""
+
+// ---------------------------------------------------------
+// RÉSUMÉ
+// ---------------------------------------------------------
+
+print "=========================================="
+print "RÉSUMÉ DES MODIFICATIONS"
+print "=========================================="
+print ""
+print "NOUVELLES COLONNES:"
+print "  • item_number - Numéro position item"
+print "  • material_description - Description article"
+print "  • batch_number - Numéro de lot"
+print "  • storage_location - Emplacement stockage"
+print "  • storage_type - Type de stockage"
+print "  • bin_location - Emplacement bin"
+print "  • target_quantity - Quantité cible"
+print "  • variance_quantity - Écart quantité"
+print "  • weight_total_kg - Poids total"
+print ""
+print "EXTRACTION ITEMS E1WHC10:"
+print "  ✓ Une ligne par item (éclatement mv-expand)"
+print "  ✓ Colonnes material_id, quantity, batch_number remplies"
+print "  ✓ Détails complets pour analytics B2B"
+print ""
+print "PROCHAINES ÉTAPES:"
+print "  1. Désactiver mirroring sur idoc_warehouse_silver"
+print "  2. Purger la table (.clear table idoc_warehouse_silver data)"
+print "  3. Générer nouveaux IDocs (cd simulator; python main.py --count 100)"
+print "  4. Valider que les colonnes items sont remplies"
+print "  5. Réactiver mirroring"
+print ""
+print "=========================================="

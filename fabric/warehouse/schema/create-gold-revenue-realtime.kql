@@ -1,0 +1,166 @@
+// ===================================================================
+// GOLD LAYER - Revenue Real-time Materialized View
+// ===================================================================
+// Real-time financial metrics and revenue tracking
+// Optimized for CFO dashboards and financial reporting via GraphQL API
+
+// 1. CREATE materialized view for real-time revenue
+.create async materialized-view with (backfill=true) revenue_realtime on table idoc_invoices_silver
+{
+    idoc_invoices_silver
+    | extend 
+        invoice_date_only = startofday(invoice_date),
+        fiscal_month = startofmonth(invoice_date)
+    | summarize 
+        // Volume metrics
+        total_invoices = count(),
+        
+        // Revenue metrics (by invoice date)
+        total_revenue = sum(total_amount),
+        total_subtotal = sum(subtotal_amount),
+        total_tax = sum(tax_amount),
+        total_discounts = sum(discount_amount),
+        avg_invoice_amount = avg(total_amount),
+        
+        // Outstanding amounts
+        total_amount_due = sum(amount_due),
+        total_amount_paid = sum(amount_paid),
+        
+        // Invoice type distribution
+        standard_invoices = countif(invoice_type == "Standard"),
+        credit_invoices = countif(invoice_type == "Credit"),
+        debit_invoices = countif(invoice_type == "Debit"),
+        proforma_invoices = countif(invoice_type == "Pro-forma"),
+        
+        // Payment status
+        paid_invoices = countif(payment_status == "Paid"),
+        pending_invoices = countif(payment_status == "Pending"),
+        partial_invoices = countif(payment_status == "Partial"),
+        overdue_invoices = countif(payment_status == "Overdue"),
+        
+        // Aging analysis
+        current_invoices = countif(aging_bucket == "Current"),
+        aging_1_30 = countif(aging_bucket == "1-30 days"),
+        aging_31_60 = countif(aging_bucket == "31-60 days"),
+        aging_61_90 = countif(aging_bucket == "61-90 days"),
+        aging_90_plus = countif(aging_bucket == "90+ days"),
+        
+        // Customer metrics
+        unique_customers = dcount(customer_id),
+        
+        // Service type revenue
+        revenue_by_service = make_bag(pack(service_type, sum(total_amount))),
+        
+        // Dispute tracking
+        disputed_invoices = countif(is_disputed == true),
+        disputed_amount = sumif(total_amount, is_disputed == true),
+        
+        // Performance metrics
+        avg_payment_efficiency = avg(payment_efficiency),
+        avg_gross_margin_pct = avg(gross_margin_pct),
+        
+        // Time metrics
+        avg_days_to_payment = avgif(days_overdue, payment_status == "Paid"),
+        
+        // Currency breakdown
+        currencies_used = make_set(currency)
+        
+        by invoice_date_only, fiscal_year, fiscal_period, sap_system
+    | extend 
+        // Calculate financial KPIs
+        collection_rate = round(100.0 * total_amount_paid / (total_amount_paid + total_amount_due), 2),
+        overdue_rate = round(100.0 * todouble(overdue_invoices) / todouble(total_invoices), 2),
+        dispute_rate = round(100.0 * todouble(disputed_invoices) / todouble(total_invoices), 2),
+        
+        // Payment distribution
+        paid_rate = round(100.0 * todouble(paid_invoices) / todouble(total_invoices), 2),
+        pending_rate = round(100.0 * todouble(pending_invoices) / todouble(total_invoices), 2),
+        
+        // Aging distribution percentages
+        current_pct = round(100.0 * todouble(current_invoices) / todouble(total_invoices), 2),
+        aging_1_30_pct = round(100.0 * todouble(aging_1_30) / todouble(total_invoices), 2),
+        aging_31_60_pct = round(100.0 * todouble(aging_31_60) / todouble(total_invoices), 2),
+        aging_61_90_pct = round(100.0 * todouble(aging_61_90) / todouble(total_invoices), 2),
+        aging_90_plus_pct = round(100.0 * todouble(aging_90_plus) / todouble(total_invoices), 2),
+        
+        // Revenue per customer
+        revenue_per_customer = round(total_revenue / todouble(unique_customers), 2),
+        
+        // Tax rate
+        effective_tax_rate = round(100.0 * total_tax / total_subtotal, 2),
+        
+        // Discount rate
+        discount_rate = round(100.0 * total_discounts / total_subtotal, 2),
+        
+        // Days Sales Outstanding (DSO) approximation
+        dso_days = round(total_amount_due / (total_revenue / 30.0), 2)
+    | project 
+        invoice_date = invoice_date_only,
+        fiscal_year,
+        fiscal_period,
+        sap_system,
+        total_invoices,
+        total_revenue,
+        total_subtotal,
+        total_tax,
+        total_discounts,
+        avg_invoice_amount,
+        total_amount_due,
+        total_amount_paid,
+        standard_invoices,
+        credit_invoices,
+        debit_invoices,
+        proforma_invoices,
+        paid_invoices,
+        pending_invoices,
+        partial_invoices,
+        overdue_invoices,
+        current_invoices,
+        aging_1_30,
+        aging_31_60,
+        aging_61_90,
+        aging_90_plus,
+        current_pct,
+        aging_1_30_pct,
+        aging_31_60_pct,
+        aging_61_90_pct,
+        aging_90_plus_pct,
+        unique_customers,
+        disputed_invoices,
+        disputed_amount,
+        collection_rate,
+        overdue_rate,
+        dispute_rate,
+        paid_rate,
+        pending_rate,
+        avg_payment_efficiency,
+        avg_gross_margin_pct,
+        revenue_per_customer,
+        effective_tax_rate,
+        discount_rate,
+        dso_days,
+        currencies_used
+}
+
+// 2. CONFIGURE partitioning
+.alter materialized-view revenue_realtime policy partitioning 
+```
+{
+  "PartitionKeys": [
+    {
+      "ColumnName": "invoice_date",
+      "Kind": "UniformRange",
+      "Properties": {
+        "RangeSize": "1.00:00:00"
+      }
+    }
+  ]
+}
+```
+
+// 3. CONFIGURE caching for fast queries
+.alter materialized-view revenue_realtime policy caching hot = 365d
+
+print "✓ Materialized view 'revenue_realtime' created successfully"
+print "✓ Real-time financial metrics enabled"
+print "✓ Revenue tracking and AR analytics available"

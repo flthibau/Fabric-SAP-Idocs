@@ -51,7 +51,7 @@ class INVOICESchema(BaseIDocSchema):
         tax_amount = subtotal * tax_rate
         total_amount = subtotal + tax_amount
         
-        # E1EDK01 - Document header
+        # E1EDK01 - Document header (Enhanced for B2B partner sharing)
         header = {
             "segnam": "E1EDK01",
             "belnr": invoice_number,
@@ -60,7 +60,11 @@ class INVOICESchema(BaseIDocSchema):
             "wkurs": "1.00000",
             "zterm": payment_terms,
             "bsart": "ZINV",  # Invoice type
-            "recipnt_no": customer["customer_id"]
+            "recipnt_no": customer["customer_id"],
+            # B2B Partner Fields
+            "customer_id": customer.get("customer_id", ""),
+            "customer_name": customer.get("name", ""),
+            "partner_access_scope": "CUSTOMER"
         }
         
         # E1EDK03 - Date segments

@@ -1,0 +1,143 @@
+// ===================================================================
+// SILVER LAYER - Warehouse Operations Table
+// ===================================================================
+// Creates cleansed warehouse movements table from WHSCON IDocs
+// Business context: 3PL warehouse operations and inventory management
+
+// 1. CREATE Silver table for Warehouse Operations
+.create table idoc_warehouse_silver (
+    // Primary keys
+    movement_id: string,
+    warehouse_id: string,
+    
+    // Movement details
+    movement_type: string,          // Receipt, Picking, Shipping, Transfer, Return
+    movement_date: datetime,
+    movement_status: string,
+    
+    // Material information
+    material_id: string,
+    material_description: string,
+    batch_number: string,
+    serial_number: string,
+    
+    // Quantity and UOM
+    quantity: decimal,
+    unit_of_measure: string,
+    weight_kg: decimal,
+    volume_m3: decimal,
+    
+    // Location tracking
+    from_location: string,          // Warehouse location (bin, shelf, zone)
+    to_location: string,
+    zone: string,
+    aisle: string,
+    shelf: string,
+    bin: string,
+    
+    // Related documents
+    order_number: string,
+    shipment_number: string,
+    purchase_order: string,
+    goods_receipt: string,
+    
+    // Personnel and equipment
+    operator_id: string,
+    operator_name: string,
+    equipment_id: string,
+    
+    // Quality and condition
+    quality_status: string,
+    stock_condition: string,
+    inspection_required: bool,
+    
+    // Calculated metrics
+    processing_time_minutes: real,
+    movement_accuracy: real,
+    is_exception: bool,
+    exception_reason: string,
+    
+    // System fields
+    sap_system: string,
+    idoc_number: string,
+    ingestion_timestamp: datetime,
+    
+    // Original data
+    raw_control: dynamic,
+    raw_data: dynamic
+)
+
+// 2. CONFIGURE retention
+.alter table idoc_warehouse_silver policy retention 
+```
+{
+    "SoftDeletePeriod": "365.00:00:00",
+    "Recoverability": "Enabled"
+}
+```
+
+// 3. CREATE extraction function
+.create-or-alter function ExtractWarehouseData(raw_data: dynamic, raw_control: dynamic) {
+    let movement_time = todatetime(raw_control.credat);
+    let completed_time = todatetime(raw_data.completed_time);
+    let processing_minutes = datetime_diff('minute', completed_time, movement_time);
+    
+    // Determine if this is an exception
+    let is_exception = tostring(raw_data.exception_flag) == "X" or tostring(raw_control.status) != "03";
+    
+    pack(
+        "movement_id", tostring(raw_control.docnum),
+        "warehouse_id", tostring(raw_data.warehouse_id),
+        "movement_type", tostring(raw_data.movement_type),
+        "movement_date", movement_time,
+        "movement_status", tostring(raw_control.status),
+        "material_id", tostring(raw_data.material_id),
+        "material_description", tostring(raw_data.material_description),
+        "batch_number", tostring(raw_data.batch_number),
+        "serial_number", tostring(raw_data.serial_number),
+        "quantity", todecimal(raw_data.quantity),
+        "unit_of_measure", tostring(raw_data.unit),
+        "weight_kg", todecimal(raw_data.weight),
+        "volume_m3", todecimal(raw_data.volume),
+        "from_location", tostring(raw_data.from_location),
+        "to_location", tostring(raw_data.to_location),
+        "zone", tostring(raw_data.zone),
+        "aisle", tostring(raw_data.aisle),
+        "shelf", tostring(raw_data.shelf),
+        "bin", tostring(raw_data.bin),
+        "order_number", tostring(raw_data.order_number),
+        "shipment_number", tostring(raw_data.shipment_number),
+        "purchase_order", tostring(raw_data.purchase_order),
+        "goods_receipt", tostring(raw_data.goods_receipt),
+        "operator_id", tostring(raw_data.operator_id),
+        "operator_name", tostring(raw_data.operator_name),
+        "equipment_id", tostring(raw_data.equipment_id),
+        "quality_status", tostring(raw_data.quality_status),
+        "stock_condition", tostring(raw_data.stock_condition),
+        "inspection_required", tostring(raw_data.inspection_flag) == "X",
+        "processing_time_minutes", processing_minutes,
+        "movement_accuracy", 100.0,  // To be calculated based on expected vs actual
+        "is_exception", is_exception,
+        "exception_reason", tostring(raw_data.exception_reason)
+    )
+}
+
+// 4. CREATE update policy
+.alter table idoc_warehouse_silver policy update 
+```
+[{
+    "IsEnabled": true,
+    "Source": "idoc_raw",
+    "Query": "idoc_raw | where message_type == 'WHSCON' | extend extracted = ExtractWarehouseData(data, control) | project movement_id = tostring(extracted.movement_id), warehouse_id = tostring(extracted.warehouse_id), movement_type = tostring(extracted.movement_type), movement_date = todatetime(extracted.movement_date), movement_status = tostring(extracted.movement_status), material_id = tostring(extracted.material_id), material_description = tostring(extracted.material_description), batch_number = tostring(extracted.batch_number), serial_number = tostring(extracted.serial_number), quantity = todecimal(extracted.quantity), unit_of_measure = tostring(extracted.unit_of_measure), weight_kg = todecimal(extracted.weight_kg), volume_m3 = todecimal(extracted.volume_m3), from_location = tostring(extracted.from_location), to_location = tostring(extracted.to_location), zone = tostring(extracted.zone), aisle = tostring(extracted.aisle), shelf = tostring(extracted.shelf), bin = tostring(extracted.bin), order_number = tostring(extracted.order_number), shipment_number = tostring(extracted.shipment_number), purchase_order = tostring(extracted.purchase_order), goods_receipt = tostring(extracted.goods_receipt), operator_id = tostring(extracted.operator_id), operator_name = tostring(extracted.operator_name), equipment_id = tostring(extracted.equipment_id), quality_status = tostring(extracted.quality_status), stock_condition = tostring(extracted.stock_condition), inspection_required = tobool(extracted.inspection_required), processing_time_minutes = toreal(extracted.processing_time_minutes), movement_accuracy = toreal(extracted.movement_accuracy), is_exception = tobool(extracted.is_exception), exception_reason = tostring(extracted.exception_reason), sap_system = sap_system, idoc_number = tostring(control.docnum), ingestion_timestamp = now(), raw_control = control, raw_data = data",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]
+```
+
+// 5. ENABLE caching and streaming
+.alter table idoc_warehouse_silver policy caching hot = 30d
+.alter table idoc_warehouse_silver policy streamingingestion enable
+
+print "✓ Silver layer table 'idoc_warehouse_silver' created successfully"
+print "✓ Warehouse operations tracking enabled"
+print "✓ Real-time inventory movement processing"
