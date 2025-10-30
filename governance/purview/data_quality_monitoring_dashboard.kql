@@ -1,0 +1,526 @@
+//==============================================================================
+// DATA QUALITY MONITORING DASHBOARD
+// Queries for real-time data quality monitoring
+// Data Product: 3PL Logistics Analytics
+//==============================================================================
+
+//------------------------------------------------------------------------------
+// QUERY 1: OVERALL DATA QUALITY SCORE
+//------------------------------------------------------------------------------
+// Execute all critical rules and calculate overall quality score
+
+.create-or-alter function with (folder = "DataQuality", docstring = "Calculate overall data quality score")
+OverallQualityScore() {
+    let bronze_rules = 
+        // BRZ-001: Message Structure Completeness
+        idoc_raw
+        | summarize failed = countif(isnull(control) or isnull(data))
+        | extend rule = "BRZ-001", dimension = "Completeness", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        | union (
+            // BRZ-002: Message Type Validity
+            idoc_raw
+            | summarize failed = countif(message_type !in ('ORDERS', 'SHPMNT', 'DESADV', 'WHSCON', 'INVOIC'))
+            | extend rule = "BRZ-002", dimension = "Validity", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        )
+        | union (
+            // BRZ-003: IDoc Number Uniqueness
+            idoc_raw
+            | summarize count() by idoc_number
+            | where count_ > 1
+            | summarize failed = count()
+            | extend rule = "BRZ-003", dimension = "Uniqueness", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        );
+    
+    let silver_orders_rules = 
+        // SLV-ORD-001: Order Number Mandatory
+        idoc_orders_silver
+        | summarize failed = countif(isempty(order_number) or isnull(order_number))
+        | extend rule = "SLV-ORD-001", dimension = "Completeness", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        | union (
+            // SLV-ORD-002: Customer ID Mandatory
+            idoc_orders_silver
+            | summarize failed = countif(isempty(customer_id) or isnull(customer_id))
+            | extend rule = "SLV-ORD-002", dimension = "Completeness", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        )
+        | union (
+            // SLV-ORD-004: Amount Validity
+            idoc_orders_silver
+            | summarize failed = countif(total_amount <= 0)
+            | extend rule = "SLV-ORD-004", dimension = "Validity", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        );
+    
+    let silver_shipments_rules = 
+        // SLV-SHP-001: Shipment Number Uniqueness
+        idoc_shipments_silver
+        | summarize count() by shipment_number
+        | where count_ > 1
+        | summarize failed = count()
+        | extend rule = "SLV-SHP-001", dimension = "Uniqueness", priority = "Critical", status = iff(failed == 0, "Pass", "Fail");
+    
+    let silver_warehouse_rules = 
+        // SLV-WHS-001: Movement Type Validity
+        idoc_warehouse_silver
+        | summarize failed = countif(movement_type !in ('GR', 'GI', 'Transfer', 'Count'))
+        | extend rule = "SLV-WHS-001", dimension = "Validity", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        | union (
+            // SLV-WHS-002: Quantity Positivity
+            idoc_warehouse_silver
+            | summarize failed = countif(quantity <= 0)
+            | extend rule = "SLV-WHS-002", dimension = "Validity", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        );
+    
+    let silver_invoices_rules = 
+        // SLV-INV-001: Invoice Number Uniqueness
+        idoc_invoices_silver
+        | summarize count() by invoice_number
+        | where count_ > 1
+        | summarize failed = count()
+        | extend rule = "SLV-INV-001", dimension = "Uniqueness", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        | union (
+            // SLV-INV-002: Amount Calculations
+            idoc_invoices_silver
+            | extend calculated_total = subtotal_amount + tax_amount - discount_amount + shipping_charges
+            | summarize failed = countif(abs(total_amount - calculated_total) > 0.01)
+            | extend rule = "SLV-INV-002", dimension = "Accuracy", priority = "Critical", status = iff(failed == 0, "Pass", "Fail")
+        );
+    
+    // Union all critical rules
+    union bronze_rules, silver_orders_rules, silver_shipments_rules, silver_warehouse_rules, silver_invoices_rules
+    | extend timestamp = now()
+    | summarize 
+        total_rules = count(),
+        passed = countif(status == "Pass"),
+        failed = countif(status == "Fail"),
+        critical_failures = countif(status == "Fail" and priority == "Critical")
+    | extend 
+        quality_score = round(passed * 100.0 / total_rules, 2),
+        health_status = case(
+            critical_failures > 0, "Critical",
+            quality_score >= 99.0, "Healthy",
+            quality_score >= 95.0, "Warning",
+            "At Risk"
+        )
+    | project timestamp, quality_score, health_status, total_rules, passed, failed, critical_failures
+}
+
+// Execute: OverallQualityScore()
+
+
+//------------------------------------------------------------------------------
+// QUERY 2: QUALITY SCORECARD BY DIMENSION
+//------------------------------------------------------------------------------
+// Break down quality score by dimension (Completeness, Accuracy, etc.)
+
+.create-or-alter function with (folder = "DataQuality", docstring = "Quality scorecard by dimension")
+QualityScorecardByDimension() {
+    let all_rules = datatable(rule:string, dimension:string, priority:string, query:string) [
+        "BRZ-001", "Completeness", "Critical", "bronze_structure",
+        "BRZ-002", "Validity", "Critical", "bronze_type",
+        "BRZ-003", "Uniqueness", "Critical", "bronze_unique",
+        "BRZ-004", "Timeliness", "High", "bronze_time",
+        "SLV-ORD-001", "Completeness", "Critical", "silver_ord_complete",
+        "SLV-ORD-002", "Completeness", "Critical", "silver_ord_customer",
+        "SLV-ORD-003", "Consistency", "High", "silver_ord_dates",
+        "SLV-ORD-004", "Validity", "Critical", "silver_ord_amount",
+        "SLV-SHP-001", "Uniqueness", "Critical", "silver_shp_unique",
+        "SLV-SHP-002", "Validity", "High", "silver_shp_carrier",
+        "SLV-SHP-003", "Validity", "Medium", "silver_shp_transit",
+        "SLV-WHS-001", "Validity", "Critical", "silver_whs_type",
+        "SLV-WHS-002", "Validity", "Critical", "silver_whs_qty",
+        "SLV-INV-001", "Uniqueness", "Critical", "silver_inv_unique",
+        "SLV-INV-002", "Accuracy", "Critical", "silver_inv_calc"
+    ];
+    
+    // Execute all rules (simplified for dashboard)
+    let results = all_rules
+    | extend status = "Pass", failed = 0  // Placeholder - replace with actual validation
+    | extend timestamp = now();
+    
+    results
+    | summarize 
+        total = count(),
+        passed = countif(status == "Pass"),
+        failed = countif(status == "Fail")
+        by dimension
+    | extend score = round(passed * 100.0 / total, 2)
+    | project dimension, score, passed, failed, total
+    | order by score asc
+}
+
+// Execute: QualityScorecardByDimension()
+
+
+//------------------------------------------------------------------------------
+// QUERY 3: QUALITY TREND (Last 7 Days)
+//------------------------------------------------------------------------------
+// Track data quality score over time
+
+.create-or-alter function with (folder = "DataQuality", docstring = "Quality trend over last 7 days", startTime:datetime = datetime(null), endTime:datetime = datetime(null))
+QualityTrend(startTime:datetime = ago(7d), endTime:datetime = now()) {
+    // This query requires a data_quality_results table that stores historical validation results
+    // Example schema: | timestamp:datetime, rule:string, status:string, failed_count:int |
+    
+    // Placeholder query - replace with actual historical data
+    range timestamp from startTime to endTime step 1d
+    | extend quality_score = 99.5 + (rand() * 0.5 - 0.25) // Simulated for demonstration
+    | extend health_status = case(
+        quality_score >= 99.0, "Healthy",
+        quality_score >= 95.0, "Warning",
+        "At Risk"
+    )
+    | project timestamp, quality_score, health_status
+}
+
+// Execute: QualityTrend()
+
+
+//------------------------------------------------------------------------------
+// QUERY 4: FAILED RULES DETAILS
+//------------------------------------------------------------------------------
+// Show all failed rules with details for investigation
+
+.create-or-alter function with (folder = "DataQuality", docstring = "List all failed data quality rules")
+FailedRulesDetails() {
+    let bronze_failures = 
+        idoc_raw
+        | where isnull(control) or isnull(data)
+        | summarize failed_count = count()
+        | where failed_count > 0
+        | extend rule = "BRZ-001", description = "Message Structure Completeness", dimension = "Completeness", priority = "Critical", table_name = "idoc_raw"
+        | union (
+            idoc_raw
+            | where message_type !in ('ORDERS', 'SHPMNT', 'DESADV', 'WHSCON', 'INVOIC')
+            | summarize failed_count = count()
+            | where failed_count > 0
+            | extend rule = "BRZ-002", description = "Message Type Validity", dimension = "Validity", priority = "Critical", table_name = "idoc_raw"
+        )
+        | union (
+            idoc_raw
+            | summarize count() by idoc_number
+            | where count_ > 1
+            | summarize failed_count = count()
+            | where failed_count > 0
+            | extend rule = "BRZ-003", description = "IDoc Number Uniqueness", dimension = "Uniqueness", priority = "Critical", table_name = "idoc_raw"
+        );
+    
+    let silver_failures = 
+        idoc_orders_silver
+        | where isempty(order_number) or isnull(order_number)
+        | summarize failed_count = count()
+        | where failed_count > 0
+        | extend rule = "SLV-ORD-001", description = "Order Number Mandatory", dimension = "Completeness", priority = "Critical", table_name = "idoc_orders_silver"
+        | union (
+            idoc_orders_silver
+            | where total_amount <= 0
+            | summarize failed_count = count()
+            | where failed_count > 0
+            | extend rule = "SLV-ORD-004", description = "Amount Validity", dimension = "Validity", priority = "Critical", table_name = "idoc_orders_silver"
+        )
+        | union (
+            idoc_shipments_silver
+            | summarize count() by shipment_number
+            | where count_ > 1
+            | summarize failed_count = count()
+            | where failed_count > 0
+            | extend rule = "SLV-SHP-001", description = "Shipment Number Uniqueness", dimension = "Uniqueness", priority = "Critical", table_name = "idoc_shipments_silver"
+        )
+        | union (
+            idoc_invoices_silver
+            | summarize count() by invoice_number
+            | where count_ > 1
+            | summarize failed_count = count()
+            | where failed_count > 0
+            | extend rule = "SLV-INV-001", description = "Invoice Number Uniqueness", dimension = "Uniqueness", priority = "Critical", table_name = "idoc_invoices_silver"
+        )
+        | union (
+            idoc_invoices_silver
+            | extend calculated_total = subtotal_amount + tax_amount - discount_amount + shipping_charges
+            | where abs(total_amount - calculated_total) > 0.01
+            | summarize failed_count = count()
+            | where failed_count > 0
+            | extend rule = "SLV-INV-002", description = "Amount Calculations", dimension = "Accuracy", priority = "Critical", table_name = "idoc_invoices_silver"
+        );
+    
+    union bronze_failures, silver_failures
+    | extend 
+        timestamp = now(),
+        recommended_action = case(
+            rule == "BRZ-001", "Alert data engineering team - message structure invalid",
+            rule == "BRZ-002", "Quarantine message, investigate source system",
+            rule == "BRZ-003", "Deduplicate, keep first occurrence",
+            rule == "SLV-ORD-001", "Reject record, alert business team",
+            rule == "SLV-ORD-004", "Quarantine order, manual review required",
+            rule == "SLV-SHP-001", "Deduplicate, alert IT",
+            rule == "SLV-INV-001", "Critical alert to finance - investigate double-billing",
+            rule == "SLV-INV-002", "Recalculate totals, alert finance",
+            "Investigate and remediate"
+        )
+    | project timestamp, rule, description, dimension, priority, table_name, failed_count, recommended_action
+    | order by priority asc, failed_count desc
+}
+
+// Execute: FailedRulesDetails()
+
+
+//------------------------------------------------------------------------------
+// QUERY 5: DATA QUALITY ALERTS
+//------------------------------------------------------------------------------
+// Critical alerts that need immediate attention
+
+.create-or-alter function with (folder = "DataQuality", docstring = "Generate critical data quality alerts")
+DataQualityAlerts() {
+    let critical_threshold = 0;  // 0 failures allowed for Critical rules
+    
+    let alerts = 
+        // Check all critical rules
+        idoc_raw
+        | where isnull(control) or isnull(data)
+        | summarize failed_count = count()
+        | where failed_count > critical_threshold
+        | extend 
+            alert_level = "Critical",
+            rule = "BRZ-001",
+            message = strcat("CRITICAL: ", failed_count, " messages missing structure"),
+            affected_table = "idoc_raw"
+        | union (
+            idoc_raw
+            | summarize count() by idoc_number
+            | where count_ > 1
+            | summarize failed_count = count()
+            | where failed_count > critical_threshold
+            | extend 
+                alert_level = "Critical",
+                rule = "BRZ-003",
+                message = strcat("CRITICAL: ", failed_count, " duplicate IDoc numbers"),
+                affected_table = "idoc_raw"
+        )
+        | union (
+            idoc_orders_silver
+            | where isempty(order_number) or isnull(order_number)
+            | summarize failed_count = count()
+            | where failed_count > critical_threshold
+            | extend 
+                alert_level = "Critical",
+                rule = "SLV-ORD-001",
+                message = strcat("CRITICAL: ", failed_count, " orders missing order number"),
+                affected_table = "idoc_orders_silver"
+        )
+        | union (
+            idoc_orders_silver
+            | where total_amount <= 0
+            | summarize failed_count = count()
+            | where failed_count > critical_threshold
+            | extend 
+                alert_level = "Critical",
+                rule = "SLV-ORD-004",
+                message = strcat("CRITICAL: ", failed_count, " orders with invalid amounts"),
+                affected_table = "idoc_orders_silver"
+        )
+        | union (
+            idoc_invoices_silver
+            | summarize count() by invoice_number
+            | where count_ > 1
+            | summarize failed_count = count()
+            | where failed_count > critical_threshold
+            | extend 
+                alert_level = "Critical",
+                rule = "SLV-INV-001",
+                message = strcat("CRITICAL: ", failed_count, " duplicate invoice numbers - FINANCIAL RISK!"),
+                affected_table = "idoc_invoices_silver"
+        )
+        | union (
+            idoc_invoices_silver
+            | extend calculated_total = subtotal_amount + tax_amount - discount_amount + shipping_charges
+            | where abs(total_amount - calculated_total) > 0.01
+            | summarize failed_count = count()
+            | where failed_count > critical_threshold
+            | extend 
+                alert_level = "Critical",
+                rule = "SLV-INV-002",
+                message = strcat("CRITICAL: ", failed_count, " invoices with calculation errors - REVENUE IMPACT!"),
+                affected_table = "idoc_invoices_silver"
+        );
+    
+    alerts
+    | extend timestamp = now()
+    | project timestamp, alert_level, rule, message, affected_table, failed_count
+    | order by failed_count desc
+}
+
+// Execute: DataQualityAlerts()
+
+
+//------------------------------------------------------------------------------
+// QUERY 6: TABLE-LEVEL QUALITY METRICS
+//------------------------------------------------------------------------------
+// Quality metrics for each table
+
+.create-or-alter function with (folder = "DataQuality", docstring = "Quality metrics by table")
+TableLevelQualityMetrics() {
+    let bronze_metrics = 
+        idoc_raw
+        | summarize 
+            total_records = count(),
+            missing_structure = countif(isnull(control) or isnull(data)),
+            invalid_types = countif(message_type !in ('ORDERS', 'SHPMNT', 'DESADV', 'WHSCON', 'INVOIC')),
+            unique_idocs = dcount(idoc_number),
+            duplicate_idocs = count() - dcount(idoc_number)
+        | extend 
+            table_name = "idoc_raw",
+            layer = "Bronze",
+            completeness_score = round((total_records - missing_structure) * 100.0 / total_records, 2),
+            validity_score = round((total_records - invalid_types) * 100.0 / total_records, 2),
+            uniqueness_score = round(unique_idocs * 100.0 / total_records, 2);
+    
+    let silver_orders_metrics = 
+        idoc_orders_silver
+        | summarize 
+            total_records = count(),
+            missing_order_number = countif(isempty(order_number) or isnull(order_number)),
+            missing_customer = countif(isempty(customer_id) or isnull(customer_id)),
+            invalid_amounts = countif(total_amount <= 0),
+            invalid_dates = countif(requested_delivery_date <= order_date)
+        | extend 
+            table_name = "idoc_orders_silver",
+            layer = "Silver",
+            completeness_score = round((total_records - missing_order_number - missing_customer) * 100.0 / total_records, 2),
+            validity_score = round((total_records - invalid_amounts) * 100.0 / total_records, 2),
+            consistency_score = round((total_records - invalid_dates) * 100.0 / total_records, 2);
+    
+    let silver_shipments_metrics = 
+        idoc_shipments_silver
+        | summarize 
+            total_records = count(),
+            unique_shipments = dcount(shipment_number),
+            duplicate_shipments = count() - dcount(shipment_number),
+            invalid_transit = countif(transit_time_hours < 0 or transit_time_hours > 720)
+        | extend 
+            table_name = "idoc_shipments_silver",
+            layer = "Silver",
+            uniqueness_score = round(unique_shipments * 100.0 / total_records, 2),
+            validity_score = round((total_records - invalid_transit) * 100.0 / total_records, 2);
+    
+    let silver_warehouse_metrics = 
+        idoc_warehouse_silver
+        | summarize 
+            total_records = count(),
+            invalid_movement = countif(movement_type !in ('GR', 'GI', 'Transfer', 'Count')),
+            invalid_qty = countif(quantity <= 0)
+        | extend 
+            table_name = "idoc_warehouse_silver",
+            layer = "Silver",
+            validity_score = round((total_records - invalid_movement - invalid_qty) * 100.0 / total_records, 2);
+    
+    let silver_invoices_metrics = 
+        idoc_invoices_silver
+        | extend calculated_total = subtotal_amount + tax_amount - discount_amount + shipping_charges
+        | summarize 
+            total_records = count(),
+            unique_invoices = dcount(invoice_number),
+            duplicate_invoices = count() - dcount(invoice_number),
+            calculation_errors = countif(abs(total_amount - calculated_total) > 0.01)
+        | extend 
+            table_name = "idoc_invoices_silver",
+            layer = "Silver",
+            uniqueness_score = round(unique_invoices * 100.0 / total_records, 2),
+            accuracy_score = round((total_records - calculation_errors) * 100.0 / total_records, 2);
+    
+    union bronze_metrics, silver_orders_metrics, silver_shipments_metrics, silver_warehouse_metrics, silver_invoices_metrics
+    | extend timestamp = now()
+    | project timestamp, table_name, layer, total_records, completeness_score, validity_score, uniqueness_score, consistency_score, accuracy_score
+    | order by layer asc, table_name asc
+}
+
+// Execute: TableLevelQualityMetrics()
+
+
+//------------------------------------------------------------------------------
+// QUERY 7: QUALITY KPIs (For Executive Dashboard)
+//------------------------------------------------------------------------------
+// High-level KPIs for executive reporting
+
+.create-or-alter function with (folder = "DataQuality", docstring = "Executive KPIs for data quality")
+QualityKPIs() {
+    let quality_score = toscalar(
+        OverallQualityScore()
+        | project quality_score
+    );
+    
+    let total_records = toscalar(
+        idoc_raw | count
+    );
+    
+    let silver_records = toscalar(
+        union idoc_orders_silver, idoc_shipments_silver, idoc_warehouse_silver, idoc_invoices_silver
+        | count
+    );
+    
+    let critical_issues = toscalar(
+        DataQualityAlerts()
+        | count
+    );
+    
+    print 
+        timestamp = now(),
+        kpi_data_quality_score = quality_score,
+        kpi_total_messages_processed = total_records,
+        kpi_silver_records_available = silver_records,
+        kpi_critical_issues_count = critical_issues,
+        kpi_data_availability_pct = round(silver_records * 100.0 / total_records, 2),
+        kpi_health_status = case(
+            critical_issues > 0, "Critical",
+            quality_score >= 99.0, "Healthy",
+            quality_score >= 95.0, "Warning",
+            "At Risk"
+        )
+}
+
+// Execute: QualityKPIs()
+
+
+//------------------------------------------------------------------------------
+// USAGE EXAMPLES
+//------------------------------------------------------------------------------
+
+// 1. Check current overall quality score
+// OverallQualityScore()
+
+// 2. View quality by dimension (Completeness, Accuracy, etc.)
+// QualityScorecardByDimension()
+
+// 3. See quality trend over last 7 days
+// QualityTrend()
+
+// 4. List all current failures
+// FailedRulesDetails()
+
+// 5. Get critical alerts
+// DataQualityAlerts()
+
+// 6. View table-level metrics
+// TableLevelQualityMetrics()
+
+// 7. Executive KPIs
+// QualityKPIs()
+
+
+//------------------------------------------------------------------------------
+// SCHEDULED EXECUTION (Configure in Eventhouse)
+//------------------------------------------------------------------------------
+
+// Create a scheduled job to run every hour:
+// .create-or-alter function with (folder = "DataQuality") 
+// ScheduledQualityCheck() {
+//     let alerts = DataQualityAlerts();
+//     let quality = OverallQualityScore();
+//     
+//     // Store results in a tracking table
+//     alerts | extend check_time = now();
+//     quality | extend check_time = now();
+// }
+
+// Then configure Azure Logic Apps or Power Automate to:
+// 1. Execute ScheduledQualityCheck() every hour
+// 2. If critical_failures > 0, send email alert
+// 3. If quality_score < 95, send Teams notification
+// 4. Log all results to a historical tracking table

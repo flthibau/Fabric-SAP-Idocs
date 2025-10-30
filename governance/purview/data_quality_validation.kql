@@ -1,0 +1,216 @@
+//==============================================================================
+// DATA QUALITY VALIDATION SCRIPT
+// Auto-generated from Purview Data Quality Rules
+// Data Product: 3PL Logistics Analytics
+//==============================================================================
+
+// Execute all data quality rules and collect results
+
+let quality_results = datatable(
+    rule_id: string,
+    rule_name: string,
+    dimension: string,
+    priority: string,
+    layer: string,
+    table_name: string,
+    status: string,
+    failed_count: int,
+    message: string,
+    timestamp: datetime
+)[];
+
+
+// Rule 1: BRZ-001: Message Structure Completeness
+let rule_1 = 
+idoc_raw
+            | where isnull(control) or isnull(data)
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " messages missing structure");
+
+
+// Rule 2: BRZ-002: Message Type Validity
+let rule_2 = 
+idoc_raw
+            | where message_type !in ('ORDERS', 'SHPMNT', 'DESADV', 'WHSCON', 'INVOIC')
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " unknown message types");
+
+
+// Rule 3: BRZ-003: IDoc Number Uniqueness
+let rule_3 = 
+idoc_raw
+            | summarize count() by idoc_number
+            | where count_ > 1
+            | summarize duplicate_count = count()
+            | extend status = iff(duplicate_count == 0, "Pass", "Fail")
+            | project status, failed_count = duplicate_count, message = strcat(duplicate_count, " duplicate IDoc numbers");
+
+
+// Rule 4: BRZ-004: Ingestion Timeliness
+let rule_4 = 
+idoc_raw
+            | extend latency_seconds = datetime_diff('second', ingestion_time(), todatetime(timestamp))
+            | where latency_seconds > 30
+            | summarize late_count = count(), max_latency = max(latency_seconds)
+            | extend late_pct = late_count * 100.0 / toscalar(idoc_raw | count())
+            | extend status = iff(late_pct <= 5.0, "Pass", "Fail")
+            | project status, failed_count = late_count, message = strcat(round(late_pct, 2), "% late messages, max latency: ", max_latency, "s");
+
+
+// Rule 5: SLV-ORD-001: Order Number Mandatory
+let rule_5 = 
+idoc_orders_silver
+            | where isempty(order_number) or isnull(order_number)
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " orders missing order number");
+
+
+// Rule 6: SLV-ORD-002: Customer ID Mandatory
+let rule_6 = 
+idoc_orders_silver
+            | where isempty(customer_id) or isnull(customer_id)
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " orders missing customer ID");
+
+
+// Rule 7: SLV-ORD-003: Date Consistency
+let rule_7 = 
+idoc_orders_silver
+            | where requested_delivery_date <= order_date
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " orders with invalid date logic");
+
+
+// Rule 8: SLV-ORD-004: Amount Validity
+let rule_8 = 
+idoc_orders_silver
+            | where total_amount <= 0
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " orders with invalid amounts");
+
+
+// Rule 9: SLV-SHP-001: Shipment Number Uniqueness
+let rule_9 = 
+idoc_shipments_silver
+            | summarize count() by shipment_number
+            | where count_ > 1
+            | summarize duplicate_count = count()
+            | extend status = iff(duplicate_count == 0, "Pass", "Fail")
+            | project status, failed_count = duplicate_count, message = strcat(duplicate_count, " duplicate shipment numbers");
+
+
+// Rule 10: SLV-SHP-002: Carrier Code Validity
+let rule_10 = 
+let valid_carriers = datatable(carrier_code:string) ["FEDEX", "UPS", "DHL", "USPS", "XPO", "CARRIER-FEDEX-GRO", "CARRIER-UPS", "CARRIER-DHL-EXPRE"];
+            idoc_shipments_silver
+            | where carrier_id !in (valid_carriers) and carrier_code !in (valid_carriers)
+            | summarize failed_count = count()
+            | extend failed_pct = failed_count * 100.0 / toscalar(idoc_shipments_silver | count())
+            | extend status = iff(failed_pct <= 1.0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(round(failed_pct, 2), "% unknown carriers");
+
+
+// Rule 11: SLV-SHP-003: Transit Time Reasonableness
+let rule_11 = 
+idoc_shipments_silver
+            | where transit_time_hours < 0 or transit_time_hours > 720
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " shipments with unreasonable transit times");
+
+
+// Rule 12: SLV-WHS-001: Movement Type Validity
+let rule_12 = 
+idoc_warehouse_silver
+            | where movement_type !in ('GR', 'GI', 'Transfer', 'Count')
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " invalid movement types");
+
+
+// Rule 13: SLV-WHS-002: Quantity Positivity
+let rule_13 = 
+idoc_warehouse_silver
+            | where quantity <= 0
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " negative or zero quantities");
+
+
+// Rule 14: SLV-INV-001: Invoice Number Uniqueness
+let rule_14 = 
+idoc_invoices_silver
+            | summarize count() by invoice_number
+            | where count_ > 1
+            | summarize duplicate_count = count()
+            | extend status = iff(duplicate_count == 0, "Pass", "Fail")
+            | project status, failed_count = duplicate_count, message = strcat(duplicate_count, " duplicate invoice numbers");
+
+
+// Rule 15: SLV-INV-002: Amount Calculations
+let rule_15 = 
+idoc_invoices_silver
+            | extend calculated_total = subtotal_amount + tax_amount - discount_amount + shipping_charges
+            | where abs(total_amount - calculated_total) > 0.01
+            | summarize failed_count = count()
+            | extend status = iff(failed_count == 0, "Pass", "Fail")
+            | project status, failed_count, message = strcat(failed_count, " invoices with calculation errors");
+
+
+// Rule 16: XLR-001: Bronze to Silver Reconciliation (Orders)
+let rule_16 = 
+let bronze_orders = idoc_raw | where message_type == 'ORDERS' | count;
+            let silver_orders = idoc_orders_silver | count;
+            print variance_pct = abs(todouble(silver_orders) - todouble(bronze_orders)) / todouble(bronze_orders) * 100
+            | extend status = iff(variance_pct <= 5.0, "Pass", "Fail")
+            | project status, failed_count = toint(variance_pct), message = strcat("Variance: ", round(variance_pct, 2), "%");
+
+
+// Union all results
+union 
+    (rule_1 | extend rule_id = "1", rule_name = "BRZ-001", dimension = "Completeness", priority = "Critical", layer = "Bronze", table_name = "idoc_raw"),
+    (rule_2 | extend rule_id = "2", rule_name = "BRZ-002", dimension = "Validity", priority = "Critical", layer = "Bronze", table_name = "idoc_raw"),
+    (rule_3 | extend rule_id = "3", rule_name = "BRZ-003", dimension = "Uniqueness", priority = "Critical", layer = "Bronze", table_name = "idoc_raw"),
+    (rule_4 | extend rule_id = "4", rule_name = "BRZ-004", dimension = "Timeliness", priority = "High", layer = "Bronze", table_name = "idoc_raw"),
+    (rule_5 | extend rule_id = "5", rule_name = "SLV-ORD-001", dimension = "Completeness", priority = "Critical", layer = "Silver", table_name = "idoc_orders_silver"),
+    (rule_6 | extend rule_id = "6", rule_name = "SLV-ORD-002", dimension = "Completeness", priority = "Critical", layer = "Silver", table_name = "idoc_orders_silver"),
+    (rule_7 | extend rule_id = "7", rule_name = "SLV-ORD-003", dimension = "Consistency", priority = "High", layer = "Silver", table_name = "idoc_orders_silver"),
+    (rule_8 | extend rule_id = "8", rule_name = "SLV-ORD-004", dimension = "Validity", priority = "Critical", layer = "Silver", table_name = "idoc_orders_silver"),
+    (rule_9 | extend rule_id = "9", rule_name = "SLV-SHP-001", dimension = "Uniqueness", priority = "Critical", layer = "Silver", table_name = "idoc_shipments_silver"),
+    (rule_10 | extend rule_id = "10", rule_name = "SLV-SHP-002", dimension = "Validity", priority = "High", layer = "Silver", table_name = "idoc_shipments_silver"),
+    (rule_11 | extend rule_id = "11", rule_name = "SLV-SHP-003", dimension = "Validity", priority = "Medium", layer = "Silver", table_name = "idoc_shipments_silver"),
+    (rule_12 | extend rule_id = "12", rule_name = "SLV-WHS-001", dimension = "Validity", priority = "Critical", layer = "Silver", table_name = "idoc_warehouse_silver"),
+    (rule_13 | extend rule_id = "13", rule_name = "SLV-WHS-002", dimension = "Validity", priority = "Critical", layer = "Silver", table_name = "idoc_warehouse_silver"),
+    (rule_14 | extend rule_id = "14", rule_name = "SLV-INV-001", dimension = "Uniqueness", priority = "Critical", layer = "Silver", table_name = "idoc_invoices_silver"),
+    (rule_15 | extend rule_id = "15", rule_name = "SLV-INV-002", dimension = "Accuracy", priority = "Critical", layer = "Silver", table_name = "idoc_invoices_silver"),
+    (rule_16 | extend rule_id = "16", rule_name = "XLR-001", dimension = "Consistency", priority = "High", layer = "Cross-Layer", table_name = "Cross-Layer")
+| extend timestamp = now()
+| project timestamp, rule_id, rule_name, dimension, priority, layer, table_name, status, failed_count, message
+| order by priority desc, dimension asc, rule_name asc
+
+// Quality Score Calculation
+| extend health = case(
+    status == "Pass", "Healthy",
+    priority == "Critical", "Critical",
+    priority == "High", "Warning",
+    "Info"
+)
+| summarize 
+    total_rules = count(),
+    passed = countif(status == "Pass"),
+    failed = countif(status == "Fail"),
+    critical_failures = countif(status == "Fail" and priority == "Critical"),
+    by_dimension = make_bag(pack(dimension, status))
+| extend quality_score = round(passed * 100.0 / total_rules, 2)
+| extend overall_health = case(
+    critical_failures > 0, "Critical",
+    quality_score >= 99.0, "Healthy",
+    quality_score >= 95.0, "Warning",
+    "At Risk"
+)

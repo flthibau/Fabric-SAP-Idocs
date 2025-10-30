@@ -1,0 +1,150 @@
+<!-- OAuth 2.0 Validation Policy for 3PL Partner API -->
+<!-- Apply at API level for both GraphQL and REST APIs -->
+
+<policies>
+    <inbound>
+        <base />
+        
+        <!-- Validate JWT token from Azure AD -->
+        <validate-jwt 
+            header-name="Authorization" 
+            failed-validation-httpcode="401" 
+            failed-validation-error-message="Unauthorized. Valid JWT token required.">
+            
+            <!-- Azure AD OpenID configuration -->
+            <openid-config url="https://login.microsoftonline.com/{{tenant-id}}/.well-known/openid-configuration" />
+            
+            <!-- Required audience (APIM) -->
+            <audiences>
+                <audience>{{apim-client-id}}</audience>
+            </audiences>
+            
+            <!-- Required claims -->
+            <required-claims>
+                <!-- partner_id claim must be present -->
+                <claim name="partner_id" match="any">
+                    <value>CARRIER-FEDEX</value>
+                    <value>WAREHOUSE-EAST</value>
+                    <value>CUSTOMER-ACME</value>
+                    <!-- Add more partner IDs as needed -->
+                </claim>
+                
+                <!-- Scope claim -->
+                <claim name="scope" match="any">
+                    <value>api.read</value>
+                </claim>
+            </required-claims>
+        </validate-jwt>
+        
+        <!-- Extract partner_id from JWT and add to request header -->
+        <set-header name="X-Partner-Id" exists-action="override">
+            <value>@{
+                string authHeader = context.Request.Headers.GetValueOrDefault("Authorization", "");
+                if (string.IsNullOrEmpty(authHeader))
+                {
+                    return "";
+                }
+                
+                string token = authHeader.Replace("Bearer ", "");
+                Jwt jwt = token.AsJwt();
+                
+                if (jwt == null)
+                {
+                    return "";
+                }
+                
+                return jwt.Claims.GetValueOrDefault("partner_id", "");
+            }</value>
+        </set-header>
+        
+        <!-- Extract partner tier (for rate limiting) -->
+        <set-variable name="partner-tier" value="@{
+            string authHeader = context.Request.Headers.GetValueOrDefault("Authorization", "");
+            if (string.IsNullOrEmpty(authHeader))
+            {
+                return "free";
+            }
+            
+            string token = authHeader.Replace("Bearer ", "");
+            Jwt jwt = token.AsJwt();
+            
+            if (jwt == null)
+            {
+                return "free";
+            }
+            
+            return jwt.Claims.GetValueOrDefault("tier", "standard");
+        }" />
+        
+        <!-- Log authentication -->
+        <set-variable name="authenticated-partner" value="@(context.Request.Headers.GetValueOrDefault("X-Partner-Id", "unknown"))" />
+        
+        <!-- Validate that partner_id was extracted -->
+        <choose>
+            <when condition="@(string.IsNullOrEmpty(context.Request.Headers.GetValueOrDefault("X-Partner-Id", "")))">
+                <return-response>
+                    <set-status code="401" reason="Unauthorized" />
+                    <set-header name="Content-Type" exists-action="override">
+                        <value>application/json</value>
+                    </set-header>
+                    <set-body>@{
+                        return JsonConvert.SerializeObject(new {
+                            error = "unauthorized",
+                            message = "Invalid JWT token. partner_id claim required."
+                        });
+                    }</set-body>
+                </return-response>
+            </when>
+        </choose>
+    </inbound>
+    
+    <backend>
+        <base />
+    </backend>
+    
+    <outbound>
+        <base />
+        
+        <!-- Add CORS headers -->
+        <cors>
+            <allowed-origins>
+                <origin>https://partner-portal.3pl-logistics.com</origin>
+                <origin>http://localhost:3000</origin>
+            </allowed-origins>
+            <allowed-methods>
+                <method>GET</method>
+                <method>POST</method>
+                <method>OPTIONS</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>X-RateLimit-Limit</header>
+                <header>X-RateLimit-Remaining</header>
+                <header>X-Partner-Id</header>
+            </expose-headers>
+        </cors>
+        
+        <!-- Add partner context to response headers (for debugging) -->
+        <set-header name="X-Partner-Context" exists-action="override">
+            <value>@(context.Variables.GetValueOrDefault<string>("authenticated-partner"))</value>
+        </set-header>
+    </outbound>
+    
+    <on-error>
+        <base />
+        
+        <!-- Custom error response -->
+        <set-header name="Content-Type" exists-action="override">
+            <value>application/json</value>
+        </set-header>
+        <set-body>@{
+            return JsonConvert.SerializeObject(new {
+                error = context.LastError.Source,
+                message = context.LastError.Message,
+                timestamp = DateTime.UtcNow.ToString("o")
+            });
+        }</set-body>
+    </on-error>
+</policies>

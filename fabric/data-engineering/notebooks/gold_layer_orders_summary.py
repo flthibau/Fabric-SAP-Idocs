@@ -63,11 +63,12 @@ display(df_orders_silver.limit(5))
 
 logger.info("Computing daily aggregations...")
 
-# Agrégations quotidiennes par SAP système et SLA status
+# Agrégations quotidiennes par SAP système, SLA status ET partner_access_scope (pour RLS)
 df_gold = df_orders_silver.groupBy(
     date_trunc("day", col("order_date")).alias("order_day"),
     col("sap_system"),
-    col("sla_status")
+    col("sla_status"),
+    col("partner_access_scope")  # AJOUT: Colonne RLS pour filtrage par partenaire
 ).agg(
     # Métriques de volume
     count("*").alias("total_orders"),
@@ -118,7 +119,7 @@ df_gold = df_gold.withColumn("processed_timestamp", current_timestamp())
 df_gold = df_gold.withColumn("source_table", lit(SOURCE_TABLE))
 
 # Tri par date et système
-df_gold = df_gold.orderBy("order_day", "sap_system", "sla_status")
+df_gold = df_gold.orderBy("order_day", "sap_system", "sla_status", "partner_access_scope")
 
 # Validation
 logger.info(f"Gold rows computed: {df_gold.count():,}")
@@ -147,6 +148,7 @@ if DeltaTable.isDeltaTable(spark, TARGET_LOCATION):
         target.order_day = source.order_day 
         AND target.sap_system = source.sap_system
         AND target.sla_status = source.sla_status
+        AND target.partner_access_scope = source.partner_access_scope
     """
     
     # Upsert

@@ -1,0 +1,43 @@
+<policies>
+    <inbound>
+        <base />
+        <!-- CORS for browser access -->
+        <cors allow-credentials="true">
+            <allowed-origins>
+                <origin>http://localhost:8000</origin>
+                <origin>http://127.0.0.1:8000</origin>
+                <origin>http://localhost:3000</origin>
+            </allowed-origins>
+            <allowed-methods>
+                <method>GET</method>
+                <method>POST</method>
+                <method>PUT</method>
+                <method>DELETE</method>
+                <method>OPTIONS</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>*</header>
+            </expose-headers>
+        </cors>
+        <!-- Set the backend to Fabric GraphQL -->
+        <set-backend-service backend-id="fabric-graphql-backend" />
+        <!-- Ensure Content-Type is application/json -->
+        <set-header name="Content-Type" exists-action="override">
+            <value>application/json</value>
+        </set-header>
+        <!-- PASSTHROUGH: Authorization header from client is forwarded as-is -->
+        <!-- This allows Fabric to see the original Service Principal identity -->
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

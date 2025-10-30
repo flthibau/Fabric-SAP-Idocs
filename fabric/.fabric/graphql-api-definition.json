@@ -1,0 +1,128 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "GraphQLApi",
+    "displayName": "3PL Partner API",
+    "description": "API GraphQL pour le Data Product 3PL Logistics Analytics - Accès partenaires (Carriers, Warehouses, Customers)"
+  },
+  "config": {
+    "version": "1.0",
+    "logicalId": "3pl-partner-graphql-api",
+    "datasource": {
+      "type": "Lakehouse",
+      "workspaceId": "ad53e547-23dc-46b0-ab5f-2acbaf0eec64",
+      "lakehouseName": "lh_3pl_logistics_gold"
+    },
+    "tables": [
+      {
+        "name": "idoc_orders_gold",
+        "enabled": true,
+        "description": "Orders data for B2B partners (customers)",
+        "schema": {
+          "order_number": "string",
+          "order_date": "datetime",
+          "customer_id": "string",
+          "customer_name": "string",
+          "requested_delivery_date": "datetime",
+          "subtotal_amount": "decimal",
+          "tax_amount": "decimal",
+          "discount_amount": "decimal",
+          "total_amount": "decimal",
+          "currency": "string",
+          "status": "string",
+          "sla_status": "string",
+          "priority": "string",
+          "payment_terms": "string",
+          "delivery_city": "string",
+          "delivery_country": "string",
+          "partner_access_scope": "string"
+        }
+      },
+      {
+        "name": "idoc_shipments_gold",
+        "enabled": true,
+        "description": "Shipments data for carriers and customers",
+        "schema": {
+          "shipment_number": "string",
+          "shipment_date": "datetime",
+          "carrier_id": "string",
+          "carrier_code": "string",
+          "carrier_name": "string",
+          "customer_id": "string",
+          "customer_name": "string",
+          "tracking_number": "string",
+          "status": "string",
+          "origin_city": "string",
+          "destination_city": "string",
+          "estimated_delivery": "datetime",
+          "actual_delivery": "datetime",
+          "transit_time_hours": "decimal",
+          "total_weight": "decimal",
+          "weight_uom": "string",
+          "package_count": "int",
+          "incoterms": "string",
+          "partner_access_scope": "string"
+        }
+      },
+      {
+        "name": "idoc_warehouse_gold",
+        "enabled": true,
+        "description": "Warehouse movements for 3PL warehouse partners",
+        "schema": {
+          "movement_id": "string",
+          "movement_date": "datetime",
+          "warehouse_id": "string",
+          "warehouse_name": "string",
+          "warehouse_partner_id": "string",
+          "warehouse_partner_name": "string",
+          "movement_type": "string",
+          "material_id": "string",
+          "material_description": "string",
+          "quantity": "decimal",
+          "uom": "string",
+          "location_from": "string",
+          "location_to": "string",
+          "processing_time_minutes": "int",
+          "document_number": "string",
+          "status": "string",
+          "partner_access_scope": "string"
+        }
+      },
+      {
+        "name": "idoc_invoices_gold",
+        "enabled": true,
+        "description": "Invoices for customer partners",
+        "schema": {
+          "invoice_number": "string",
+          "invoice_date": "datetime",
+          "customer_id": "string",
+          "customer_name": "string",
+          "subtotal_amount": "decimal",
+          "tax_amount": "decimal",
+          "discount_amount": "decimal",
+          "shipping_charges": "decimal",
+          "total_amount": "decimal",
+          "currency": "string",
+          "due_date": "datetime",
+          "aging_bucket": "string",
+          "aging_days": "int",
+          "payment_efficiency": "decimal",
+          "status": "string",
+          "partner_access_scope": "string"
+        }
+      }
+    ],
+    "capabilities": {
+      "filtering": true,
+      "sorting": true,
+      "pagination": true,
+      "mutations": false,
+      "maxPageSize": 1000
+    },
+    "security": {
+      "rowLevelSecurity": true,
+      "allowAnonymous": false,
+      "authenticationMethods": ["AzureAD"]
+    }
+  }
+}

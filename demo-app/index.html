@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3PL Partner API Demo - Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1>🚚 3PL Partner API Dashboard</h1>
+            <p class="subtitle">API Demonstration with Row-Level Security (RLS)</p>
+        </div>
+    </header>
+
+    <!-- Connection Panel -->
+    <div class="container">
+        <div class="connection-panel">
+            <h2>🔐 Service Principal Authentication</h2>
+            <div class="sp-selector">
+                <div class="sp-option" data-sp="fedex">
+                    <div class="sp-icon">🚚</div>
+                    <h3>FedEx Carrier</h3>
+                    <p>Carrier - Views only FedEx shipments</p>
+                    <button class="btn btn-primary" onclick="connectSP('fedex')">Connect</button>
+                </div>
+                <div class="sp-option" data-sp="warehouse">
+                    <div class="sp-icon">🏭</div>
+                    <h3>Warehouse Partner</h3>
+                    <p>Warehouse WH003 - Views own productivity data</p>
+                    <button class="btn btn-primary" onclick="connectSP('warehouse')">Connect</button>
+                </div>
+                <div class="sp-option" data-sp="acme">
+                    <div class="sp-icon">🏢</div>
+                    <h3>ACME Customer</h3>
+                    <p>Customer - Views orders and invoices</p>
+                    <button class="btn btn-primary" onclick="connectSP('acme')">Connect</button>
+                </div>
+            </div>
+            
+            <div id="connection-status" class="connection-status" style="display: none;">
+                <div class="status-info">
+                    <span id="connected-sp-name"></span>
+                    <button class="btn btn-secondary btn-small" onclick="disconnect()">Disconnect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard (hidden until connected) -->
+    <div id="dashboard" class="container" style="display: none;">
+        
+        <!-- API Stats Summary -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <h3 id="stat-shipments">-</h3>
+                    <p>Shipments</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                    <h3 id="stat-orders">-</h3>
+                    <p>Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 id="stat-warehouse">-</h3>
+                    <p>Warehouse Data</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <h3 id="stat-sla">-</h3>
+                    <p>SLA Records</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('shipments')">🚚 Shipments</button>
+            <button class="tab-button" onclick="showTab('orders')">📋 Orders</button>
+            <button class="tab-button" onclick="showTab('warehouse')">🏭 Warehouse</button>
+            <button class="tab-button" onclick="showTab('sla')">⏱️ SLA Performance</button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tab-content">
+            
+            <!-- Shipments Tab -->
+            <div id="tab-shipments" class="tab-pane active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>📦 Shipments in Transit</h2>
+                        <button class="btn btn-primary btn-small" onclick="loadShipments()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="shipments-loading" class="loading" style="display: none;">Loading...</div>
+                        <div id="shipments-error" class="error" style="display: none;"></div>
+                        <div id="shipments-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div id="tab-orders" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>📋 Daily Orders Summary</h2>
+                        <button class="btn btn-primary btn-small" onclick="loadOrders()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="orders-loading" class="loading" style="display: none;">Loading...</div>
+                        <div id="orders-error" class="error" style="display: none;"></div>
+                        <div id="orders-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warehouse Tab -->
+            <div id="tab-warehouse" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>🏭 Warehouse Productivity</h2>
+                        <button class="btn btn-primary btn-small" onclick="loadWarehouse()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="warehouse-loading" class="loading" style="display: none;">Loading...</div>
+                        <div id="warehouse-error" class="error" style="display: none;"></div>
+                        <div id="warehouse-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLA Tab -->
+            <div id="tab-sla" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>⏱️ SLA Performance</h2>
+                        <button class="btn btn-primary btn-small" onclick="loadSLA()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="sla-loading" class="loading" style="display: none;">Loading...</div>
+                        <div id="sla-error" class="error" style="display: none;"></div>
+                        <div id="sla-content"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>3PL Partner API Demo | Microsoft Fabric + Azure APIM + Row-Level Security</p>
+            <p class="footer-note">This demo uses Azure AD Service Principals for authentication and demonstrates RLS capabilities</p>
+        </div>
+    </footer>
+
+    <script src="js/config.js?v=2"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/api.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+</body>
+</html>

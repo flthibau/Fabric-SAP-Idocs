@@ -1,0 +1,15 @@
+<policies>
+    <inbound>
+        <set-backend-service backend-id="fabric-graphql-backend" />
+        <set-header name="Content-Type" exists-action="override">
+            <value>application/json</value>
+        </set-header>
+    </inbound>
+    <backend>
+        <forward-request />
+    </backend>
+    <outbound>
+    </outbound>
+    <on-error>
+    </on-error>
+</policies>

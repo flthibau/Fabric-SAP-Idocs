@@ -1,0 +1,658 @@
+# 3PL Partner API - GraphQL Schema
+# Microsoft Fabric GraphQL Endpoint
+# Data Product: 3PL Logistics Analytics
+# Version: 1.0
+
+"""
+Main Query type for partner access to 3PL data.
+All queries are automatically filtered by partner_access_scope based on JWT claims.
+"""
+type Query {
+  """
+  Get shipments for the authenticated partner (carrier or customer)
+  Filtered by partner_access_scope column
+  """
+  shipments(
+    """Filter by shipment status"""
+    status: ShipmentStatus
+    
+    """Filter by start date (inclusive)"""
+    dateFrom: DateTime
+    
+    """Filter by end date (inclusive)"""
+    dateTo: DateTime
+    
+    """Filter by tracking number"""
+    trackingNumber: String
+    
+    """Maximum number of results (default: 50, max: 100)"""
+    limit: Int = 50
+    
+    """Offset for pagination"""
+    offset: Int = 0
+  ): ShipmentConnection!
+  
+  """Get a single shipment by number"""
+  shipment(shipmentNumber: String!): Shipment
+  
+  """
+  Get orders for the authenticated partner (customer)
+  Filtered by partner_access_scope column
+  """
+  orders(
+    """Filter by order status"""
+    status: OrderStatus
+    
+    """Filter by start date"""
+    dateFrom: DateTime
+    
+    """Filter by end date"""
+    dateTo: DateTime
+    
+    """Filter by SLA status"""
+    slaStatus: SLAStatus
+    
+    """Maximum number of results"""
+    limit: Int = 50
+    
+    """Offset for pagination"""
+    offset: Int = 0
+  ): OrderConnection!
+  
+  """Get a single order by number"""
+  order(orderNumber: String!): Order
+  
+  """
+  Get warehouse movements for the authenticated partner (warehouse)
+  Filtered by partner_access_scope column
+  """
+  warehouseMovements(
+    """Filter by warehouse ID"""
+    warehouseId: String
+    
+    """Filter by movement type (GR, GI, Transfer, Count)"""
+    movementType: MovementType
+    
+    """Filter by start date"""
+    dateFrom: DateTime
+    
+    """Filter by end date"""
+    dateTo: DateTime
+    
+    """Maximum number of results"""
+    limit: Int = 50
+    
+    """Offset for pagination"""
+    offset: Int = 0
+  ): WarehouseMovementConnection!
+  
+  """
+  Get invoices for the authenticated partner (customer)
+  Filtered by partner_access_scope column
+  """
+  invoices(
+    """Filter by billing period (YYYY-MM format)"""
+    period: String
+    
+    """Filter by invoice status"""
+    status: InvoiceStatus
+    
+    """Filter by aging bucket"""
+    agingBucket: String
+    
+    """Maximum number of results"""
+    limit: Int = 50
+    
+    """Offset for pagination"""
+    offset: Int = 0
+  ): InvoiceConnection!
+  
+  """Get a single invoice by number"""
+  invoice(invoiceNumber: String!): Invoice
+  
+  """
+  Get KPIs for the authenticated partner
+  Returns aggregated metrics based on partner's accessible data
+  """
+  kpis(
+    """KPI metric to retrieve"""
+    metric: KPIMetric!
+    
+    """Period for the metric (YYYY-MM format)"""
+    period: String!
+    
+    """Optional grouping dimension"""
+    groupBy: KPIGroupBy
+  ): [KPI!]!
+}
+
+# ============================================================================
+# SHIPMENT TYPES
+# ============================================================================
+
+"""Shipment information for carrier and customer partners"""
+type Shipment {
+  """Unique shipment number"""
+  shipmentNumber: String!
+  
+  """Shipment creation date"""
+  shipmentDate: DateTime!
+  
+  """Carrier code"""
+  carrierCode: String!
+  
+  """Carrier name"""
+  carrierName: String!
+  
+  """Customer ID (only visible to customer partners)"""
+  customerId: String
+  
+  """Customer name"""
+  customerName: String!
+  
+  """Tracking number"""
+  trackingNumber: String
+  
+  """Current shipment status"""
+  status: ShipmentStatus!
+  
+  """Origin city"""
+  originCity: String
+  
+  """Destination city"""
+  destinationCity: String!
+  
+  """Estimated delivery date"""
+  estimatedDelivery: DateTime
+  
+  """Actual delivery date (if delivered)"""
+  actualDelivery: DateTime
+  
+  """Transit time in hours"""
+  transitTimeHours: Float
+  
+  """Total weight"""
+  totalWeight: Float
+  
+  """Weight unit of measure"""
+  weightUom: String
+  
+  """Number of packages"""
+  packageCount: Int
+  
+  """Incoterms (delivery terms)"""
+  incoterms: String
+}
+
+"""Paginated shipment results"""
+type ShipmentConnection {
+  """List of shipments"""
+  edges: [ShipmentEdge!]!
+  
+  """Pagination information"""
+  pageInfo: PageInfo!
+  
+  """Total count of shipments (before pagination)"""
+  totalCount: Int!
+}
+
+type ShipmentEdge {
+  """The shipment"""
+  node: Shipment!
+  
+  """Cursor for this edge"""
+  cursor: String!
+}
+
+"""Shipment status values"""
+enum ShipmentStatus {
+  """Awaiting pickup"""
+  PENDING_PICKUP
+  
+  """In transit"""
+  IN_TRANSIT
+  
+  """Out for delivery"""
+  OUT_FOR_DELIVERY
+  
+  """Successfully delivered"""
+  DELIVERED
+  
+  """Exception/delay occurred"""
+  EXCEPTION
+}
+
+# ============================================================================
+# ORDER TYPES
+# ============================================================================
+
+"""Order information for customer partners"""
+type Order {
+  """Unique order number"""
+  orderNumber: String!
+  
+  """Order creation date"""
+  orderDate: DateTime!
+  
+  """Customer ID"""
+  customerId: String!
+  
+  """Customer name"""
+  customerName: String!
+  
+  """Requested delivery date"""
+  requestedDeliveryDate: DateTime!
+  
+  """Subtotal amount"""
+  subtotalAmount: Float!
+  
+  """Tax amount"""
+  taxAmount: Float!
+  
+  """Discount amount"""
+  discountAmount: Float!
+  
+  """Total amount"""
+  totalAmount: Float!
+  
+  """Currency code (EUR, USD, etc.)"""
+  currency: String!
+  
+  """Current order status"""
+  status: OrderStatus!
+  
+  """SLA compliance status"""
+  slaStatus: SLAStatus!
+  
+  """Delivery priority"""
+  priority: String
+  
+  """Payment terms"""
+  paymentTerms: String
+  
+  """Delivery address city"""
+  deliveryCity: String
+  
+  """Delivery address country"""
+  deliveryCountry: String
+}
+
+"""Paginated order results"""
+type OrderConnection {
+  edges: [OrderEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type OrderEdge {
+  node: Order!
+  cursor: String!
+}
+
+"""Order status values"""
+enum OrderStatus {
+  """Order created, awaiting confirmation"""
+  PENDING
+  
+  """Order confirmed"""
+  CONFIRMED
+  
+  """Order being processed"""
+  IN_PROGRESS
+  
+  """Order shipped"""
+  SHIPPED
+  
+  """Order delivered"""
+  DELIVERED
+  
+  """Order cancelled"""
+  CANCELLED
+}
+
+"""SLA status for orders"""
+enum SLAStatus {
+  """On track to meet SLA"""
+  ON_TRACK
+  
+  """At risk of missing SLA"""
+  AT_RISK
+  
+  """SLA missed"""
+  MISSED
+  
+  """SLA met"""
+  MET
+}
+
+# ============================================================================
+# WAREHOUSE TYPES
+# ============================================================================
+
+"""Warehouse movement for warehouse partners"""
+type WarehouseMovement {
+  """Unique movement ID"""
+  movementId: String!
+  
+  """Movement date/time"""
+  movementDate: DateTime!
+  
+  """Warehouse ID"""
+  warehouseId: String!
+  
+  """Warehouse name"""
+  warehouseName: String!
+  
+  """Movement type (GR, GI, Transfer, Count)"""
+  movementType: MovementType!
+  
+  """Material/SKU ID"""
+  materialId: String!
+  
+  """Material description"""
+  materialDescription: String
+  
+  """Quantity moved"""
+  quantity: Float!
+  
+  """Unit of measure"""
+  uom: String!
+  
+  """Source location"""
+  locationFrom: String
+  
+  """Destination location"""
+  locationTo: String
+  
+  """Processing time in minutes"""
+  processingTimeMinutes: Float
+  
+  """Document number (PO, SO, etc.)"""
+  documentNumber: String
+  
+  """Movement status"""
+  status: String
+}
+
+"""Paginated warehouse movement results"""
+type WarehouseMovementConnection {
+  edges: [WarehouseMovementEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type WarehouseMovementEdge {
+  node: WarehouseMovement!
+  cursor: String!
+}
+
+"""Warehouse movement types"""
+enum MovementType {
+  """Goods Receipt"""
+  GR
+  
+  """Goods Issue"""
+  GI
+  
+  """Transfer between locations"""
+  TRANSFER
+  
+  """Inventory count"""
+  COUNT
+}
+
+# ============================================================================
+# INVOICE TYPES
+# ============================================================================
+
+"""Invoice information for customer partners"""
+type Invoice {
+  """Unique invoice number"""
+  invoiceNumber: String!
+  
+  """Invoice date"""
+  invoiceDate: DateTime!
+  
+  """Customer ID"""
+  customerId: String!
+  
+  """Customer name"""
+  customerName: String!
+  
+  """Subtotal amount"""
+  subtotalAmount: Float!
+  
+  """Tax amount"""
+  taxAmount: Float!
+  
+  """Discount amount"""
+  discountAmount: Float!
+  
+  """Shipping charges"""
+  shippingCharges: Float!
+  
+  """Total invoice amount"""
+  totalAmount: Float!
+  
+  """Currency code"""
+  currency: String!
+  
+  """Payment due date"""
+  dueDate: DateTime!
+  
+  """Aging bucket (0-30, 31-60, 61-90, 90+)"""
+  agingBucket: String!
+  
+  """Days since invoice date"""
+  agingDays: Int
+  
+  """Payment efficiency percentage"""
+  paymentEfficiency: Float
+  
+  """Payment status"""
+  status: InvoiceStatus
+}
+
+"""Paginated invoice results"""
+type InvoiceConnection {
+  edges: [InvoiceEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type InvoiceEdge {
+  node: Invoice!
+  cursor: String!
+}
+
+"""Invoice status values"""
+enum InvoiceStatus {
+  """Invoice pending"""
+  PENDING
+  
+  """Invoice sent to customer"""
+  SENT
+  
+  """Invoice paid"""
+  PAID
+  
+  """Invoice overdue"""
+  OVERDUE
+}
+
+# ============================================================================
+# KPI TYPES
+# ============================================================================
+
+"""Key Performance Indicator"""
+type KPI {
+  """Metric name"""
+  metric: String!
+  
+  """Metric value"""
+  value: Float!
+  
+  """Period for the metric"""
+  period: String!
+  
+  """Grouping dimension (if applicable)"""
+  groupBy: String
+  
+  """Timestamp of calculation"""
+  timestamp: DateTime!
+}
+
+"""Available KPI metrics"""
+enum KPIMetric {
+  """Order fulfillment rate (%)"""
+  ORDER_FULFILLMENT_RATE
+  
+  """On-time delivery rate (%)"""
+  ON_TIME_DELIVERY_RATE
+  
+  """Average delivery delay (hours)"""
+  AVG_DELIVERY_DELAY
+  
+  """Warehouse efficiency (movements/hour)"""
+  WAREHOUSE_EFFICIENCY
+  
+  """Average invoice aging (days)"""
+  AVG_INVOICE_AGING
+  
+  """Average transit time (hours)"""
+  AVG_TRANSIT_TIME
+  
+  """Total shipments count"""
+  TOTAL_SHIPMENTS
+  
+  """Total orders count"""
+  TOTAL_ORDERS
+  
+  """Total revenue (in currency)"""
+  TOTAL_REVENUE
+}
+
+"""KPI grouping dimensions"""
+enum KPIGroupBy {
+  """Group by day"""
+  DAY
+  
+  """Group by week"""
+  WEEK
+  
+  """Group by month"""
+  MONTH
+  
+  """Group by warehouse"""
+  WAREHOUSE
+  
+  """Group by carrier"""
+  CARRIER
+  
+  """Group by customer"""
+  CUSTOMER
+}
+
+# ============================================================================
+# COMMON TYPES
+# ============================================================================
+
+"""Pagination information"""
+type PageInfo {
+  """Whether there are more pages"""
+  hasNextPage: Boolean!
+  
+  """Whether there are previous pages"""
+  hasPreviousPage: Boolean!
+  
+  """Cursor for the first edge"""
+  startCursor: String
+  
+  """Cursor for the last edge"""
+  endCursor: String
+}
+
+"""DateTime scalar (ISO 8601 format)"""
+scalar DateTime
+
+# ============================================================================
+# EXAMPLE QUERIES
+# ============================================================================
+
+"""
+Example 1: Get active shipments (Carrier partner)
+query GetActiveShipments {
+  shipments(status: IN_TRANSIT, limit: 20) {
+    edges {
+      node {
+        shipmentNumber
+        trackingNumber
+        carrierName
+        destinationCity
+        estimatedDelivery
+        transitTimeHours
+      }
+    }
+    totalCount
+  }
+}
+
+Example 2: Get orders by date range (Customer partner)
+query GetRecentOrders {
+  orders(
+    dateFrom: "2025-10-01T00:00:00Z"
+    dateTo: "2025-10-31T23:59:59Z"
+    status: CONFIRMED
+    limit: 50
+  ) {
+    edges {
+      node {
+        orderNumber
+        orderDate
+        totalAmount
+        currency
+        slaStatus
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}
+
+Example 3: Get warehouse movements (Warehouse partner)
+query GetWarehouseActivity {
+  warehouseMovements(
+    movementType: GR
+    dateFrom: "2025-10-29T00:00:00Z"
+    limit: 30
+  ) {
+    edges {
+      node {
+        movementId
+        movementDate
+        materialId
+        quantity
+        uom
+        processingTimeMinutes
+      }
+    }
+    totalCount
+  }
+}
+
+Example 4: Get KPIs (All partners)
+query GetKPIs {
+  kpis(
+    metric: ON_TIME_DELIVERY_RATE
+    period: "2025-10"
+    groupBy: DAY
+  ) {
+    metric
+    value
+    period
+    groupBy
+    timestamp
+  }
+}
+"""

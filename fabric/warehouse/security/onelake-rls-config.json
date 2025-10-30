@@ -1,0 +1,82 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/onelake/rls/v1.0/schema.json",
+  "version": "1.0",
+  "roles": [
+    {
+      "name": "CarrierFedEx",
+      "description": "FedEx carrier can only see their own shipments (CARRIER-FEDEX-GROU)",
+      "tablePermissions": [
+        {
+          "tableName": "gold_shipments_in_transit",
+          "filterExpression": "carrier_id = 'CARRIER-FEDEX-GROU'"
+        },
+        {
+          "tableName": "gold_sla_performance",
+          "filterExpression": "carrier_id = 'CARRIER-FEDEX-GROU'"
+        }
+      ]
+    },
+    {
+      "name": "WarehousePartner",
+      "description": "Warehouse partner can only see their warehouse movements (PARTNER_WH003)",
+      "tablePermissions": [
+        {
+          "tableName": "gold_warehouse_productivity_daily",
+          "filterExpression": "warehouse_partner_id = 'PARTNER_WH003'"
+        }
+      ]
+    },
+    {
+      "name": "CustomerAcme",
+      "description": "ACME customer can see their orders, shipments, revenue and SLA (CUSTOMER)",
+      "tablePermissions": [
+        {
+          "tableName": "gold_orders_daily_summary",
+          "filterExpression": "partner_access_scope = 'CUSTOMER'"
+        },
+        {
+          "tableName": "gold_shipments_in_transit",
+          "filterExpression": "partner_access_scope = 'CUSTOMER'"
+        },
+        {
+          "tableName": "gold_revenue_recognition_realtime",
+          "filterExpression": "partner_access_scope = 'CUSTOMER'"
+        },
+        {
+          "tableName": "gold_sla_performance",
+          "filterExpression": "partner_access_scope = 'CUSTOMER'"
+        }
+      ]
+    }
+  ],
+  "roleAssignments": [
+    {
+      "role": "CarrierFedEx",
+      "members": [
+        {
+          "type": "ServicePrincipal",
+          "id": "fa86b10b-792c-495b-af85-bc8a765b44a1"
+        }
+      ]
+    },
+    {
+      "role": "WarehousePartner",
+      "members": [
+        {
+          "type": "ServicePrincipal",
+          "id": "bf7ca9fa-eb65-4261-91f2-08d2b360e919"
+        }
+      ]
+    },
+    {
+      "role": "CustomerAcme",
+      "members": [
+        {
+          "type": "ServicePrincipal",
+          "id": "efae8acd-de55-4c89-96b6-7f031a954ae6"
+        }
+      ]
+    }
+  ]
+}
+

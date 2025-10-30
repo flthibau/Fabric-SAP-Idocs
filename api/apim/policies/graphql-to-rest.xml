@@ -1,0 +1,316 @@
+<!-- GraphQL to REST Transformation Policy for 3PL Partner API -->
+<!-- Converts REST API calls to GraphQL queries for Fabric backend -->
+
+<policies>
+    <inbound>
+        <base />
+        
+        <!-- Store original request for debugging -->
+        <set-variable name="original-method" value="@(context.Request.Method)" />
+        <set-variable name="original-path" value="@(context.Request.Url.Path)" />
+        
+        <!-- Get partner ID from header (set by oauth-validation policy) -->
+        <set-variable name="partner-id" value="@(context.Request.Headers.GetValueOrDefault("X-Partner-Id", ""))" />
+        
+        <choose>
+            <!-- GET /shipments - List shipments with filters -->
+            <when condition="@(context.Request.Url.Path.Contains("/shipments") && !context.Request.Url.Path.Contains("{shipmentNumber}") && context.Request.Method == "GET")">
+                <set-variable name="graphql-query" value="@{
+                    var status = context.Request.Url.Query.GetValueOrDefault("status", "");
+                    var dateFrom = context.Request.Url.Query.GetValueOrDefault("dateFrom", "");
+                    var dateTo = context.Request.Url.Query.GetValueOrDefault("dateTo", "");
+                    var trackingNumber = context.Request.Url.Query.GetValueOrDefault("trackingNumber", "");
+                    var limit = context.Request.Url.Query.GetValueOrDefault("limit", "20");
+                    var offset = context.Request.Url.Query.GetValueOrDefault("offset", "0");
+                    
+                    var query = "query GetShipments($status: ShipmentStatus, $dateFrom: DateTime, $dateTo: DateTime, $trackingNumber: String, $limit: Int, $offset: Int) {\\n" +
+                                "  shipments(status: $status, dateFrom: $dateFrom, dateTo: $dateTo, trackingNumber: $trackingNumber, limit: $limit, offset: $offset) {\\n" +
+                                "    edges {\\n" +
+                                "      node {\\n" +
+                                "        shipmentNumber shipmentDate carrierCode carrierName customerId customerName\\n" +
+                                "        trackingNumber status originCity destinationCity estimatedDelivery actualDelivery\\n" +
+                                "        transitTimeHours totalWeight weightUom packageCount incoterms\\n" +
+                                "      }\\n" +
+                                "    }\\n" +
+                                "    pageInfo { hasNextPage hasPreviousPage totalCount }\\n" +
+                                "  }\\n" +
+                                "}";
+                    
+                    var variables = new JObject();
+                    if (!string.IsNullOrEmpty(status)) variables["status"] = status;
+                    if (!string.IsNullOrEmpty(dateFrom)) variables["dateFrom"] = dateFrom;
+                    if (!string.IsNullOrEmpty(dateTo)) variables["dateTo"] = dateTo;
+                    if (!string.IsNullOrEmpty(trackingNumber)) variables["trackingNumber"] = trackingNumber;
+                    variables["limit"] = int.Parse(limit);
+                    variables["offset"] = int.Parse(offset);
+                    
+                    return JsonConvert.SerializeObject(new { query = query, variables = variables });
+                }" />
+            </when>
+            
+            <!-- GET /shipments/{shipmentNumber} - Get single shipment -->
+            <when condition="@(context.Request.Url.Path.Contains("/shipments/") && context.Request.Method == "GET")">
+                <set-variable name="graphql-query" value="@{
+                    var pathParts = context.Request.Url.Path.Split('/');
+                    var shipmentNumber = pathParts[pathParts.Length - 1];
+                    
+                    var query = "query GetShipment($shipmentNumber: String!) {\\n" +
+                                "  shipment(shipmentNumber: $shipmentNumber) {\\n" +
+                                "    shipmentNumber shipmentDate carrierCode carrierName customerId customerName\\n" +
+                                "    trackingNumber status originCity destinationCity estimatedDelivery actualDelivery\\n" +
+                                "    transitTimeHours totalWeight weightUom packageCount incoterms\\n" +
+                                "  }\\n" +
+                                "}";
+                    
+                    var variables = new JObject();
+                    variables["shipmentNumber"] = shipmentNumber;
+                    
+                    return JsonConvert.SerializeObject(new { query = query, variables = variables });
+                }" />
+            </when>
+            
+            <!-- GET /orders - List orders with filters -->
+            <when condition="@(context.Request.Url.Path.Contains("/orders") && !context.Request.Url.Path.Contains("{orderNumber}") && context.Request.Method == "GET")">
+                <set-variable name="graphql-query" value="@{
+                    var status = context.Request.Url.Query.GetValueOrDefault("status", "");
+                    var dateFrom = context.Request.Url.Query.GetValueOrDefault("dateFrom", "");
+                    var dateTo = context.Request.Url.Query.GetValueOrDefault("dateTo", "");
+                    var slaStatus = context.Request.Url.Query.GetValueOrDefault("slaStatus", "");
+                    var limit = context.Request.Url.Query.GetValueOrDefault("limit", "20");
+                    var offset = context.Request.Url.Query.GetValueOrDefault("offset", "0");
+                    
+                    var query = "query GetOrders($status: OrderStatus, $dateFrom: DateTime, $dateTo: DateTime, $slaStatus: SLAStatus, $limit: Int, $offset: Int) {\\n" +
+                                "  orders(status: $status, dateFrom: $dateFrom, dateTo: $dateTo, slaStatus: $slaStatus, limit: $limit, offset: $offset) {\\n" +
+                                "    edges {\\n" +
+                                "      node {\\n" +
+                                "        orderNumber orderDate customerId customerName requestedDeliveryDate\\n" +
+                                "        subtotalAmount taxAmount discountAmount totalAmount currency status slaStatus\\n" +
+                                "        priority paymentTerms deliveryCity deliveryCountry\\n" +
+                                "      }\\n" +
+                                "    }\\n" +
+                                "    pageInfo { hasNextPage hasPreviousPage totalCount }\\n" +
+                                "  }\\n" +
+                                "}";
+                    
+                    var variables = new JObject();
+                    if (!string.IsNullOrEmpty(status)) variables["status"] = status;
+                    if (!string.IsNullOrEmpty(dateFrom)) variables["dateFrom"] = dateFrom;
+                    if (!string.IsNullOrEmpty(dateTo)) variables["dateTo"] = dateTo;
+                    if (!string.IsNullOrEmpty(slaStatus)) variables["slaStatus"] = slaStatus;
+                    variables["limit"] = int.Parse(limit);
+                    variables["offset"] = int.Parse(offset);
+                    
+                    return JsonConvert.SerializeObject(new { query = query, variables = variables });
+                }" />
+            </when>
+            
+            <!-- GET /warehouse/movements - List warehouse movements -->
+            <when condition="@(context.Request.Url.Path.Contains("/warehouse/movements") && context.Request.Method == "GET")">
+                <set-variable name="graphql-query" value="@{
+                    var warehouseId = context.Request.Url.Query.GetValueOrDefault("warehouseId", "");
+                    var movementType = context.Request.Url.Query.GetValueOrDefault("movementType", "");
+                    var dateFrom = context.Request.Url.Query.GetValueOrDefault("dateFrom", "");
+                    var dateTo = context.Request.Url.Query.GetValueOrDefault("dateTo", "");
+                    var limit = context.Request.Url.Query.GetValueOrDefault("limit", "50");
+                    
+                    var query = "query GetWarehouseMovements($warehouseId: String, $movementType: MovementType, $dateFrom: DateTime, $dateTo: DateTime, $limit: Int) {\\n" +
+                                "  warehouseMovements(warehouseId: $warehouseId, movementType: $movementType, dateFrom: $dateFrom, dateTo: $dateTo, limit: $limit) {\\n" +
+                                "    edges {\\n" +
+                                "      node {\\n" +
+                                "        movementId movementDate warehouseId warehouseName movementType\\n" +
+                                "        materialId materialDescription quantity uom locationFrom locationTo\\n" +
+                                "        processingTimeMinutes documentNumber status\\n" +
+                                "      }\\n" +
+                                "    }\\n" +
+                                "    pageInfo { hasNextPage hasPreviousPage totalCount }\\n" +
+                                "  }\\n" +
+                                "}";
+                    
+                    var variables = new JObject();
+                    if (!string.IsNullOrEmpty(warehouseId)) variables["warehouseId"] = warehouseId;
+                    if (!string.IsNullOrEmpty(movementType)) variables["movementType"] = movementType;
+                    if (!string.IsNullOrEmpty(dateFrom)) variables["dateFrom"] = dateFrom;
+                    if (!string.IsNullOrEmpty(dateTo)) variables["dateTo"] = dateTo;
+                    variables["limit"] = int.Parse(limit);
+                    
+                    return JsonConvert.SerializeObject(new { query = query, variables = variables });
+                }" />
+            </when>
+            
+            <!-- GET /invoices - List invoices with filters -->
+            <when condition="@(context.Request.Url.Path.Contains("/invoices") && !context.Request.Url.Path.Contains("{invoiceNumber}") && context.Request.Method == "GET")">
+                <set-variable name="graphql-query" value="@{
+                    var period = context.Request.Url.Query.GetValueOrDefault("period", "");
+                    var status = context.Request.Url.Query.GetValueOrDefault("status", "");
+                    var agingBucket = context.Request.Url.Query.GetValueOrDefault("agingBucket", "");
+                    var limit = context.Request.Url.Query.GetValueOrDefault("limit", "20");
+                    var offset = context.Request.Url.Query.GetValueOrDefault("offset", "0");
+                    
+                    var query = "query GetInvoices($period: String, $status: InvoiceStatus, $agingBucket: String, $limit: Int, $offset: Int) {\\n" +
+                                "  invoices(period: $period, status: $status, agingBucket: $agingBucket, limit: $limit, offset: $offset) {\\n" +
+                                "    edges {\\n" +
+                                "      node {\\n" +
+                                "        invoiceNumber invoiceDate customerId customerName\\n" +
+                                "        subtotalAmount taxAmount discountAmount shippingCharges totalAmount currency\\n" +
+                                "        dueDate agingBucket agingDays paymentEfficiency status\\n" +
+                                "      }\\n" +
+                                "    }\\n" +
+                                "    pageInfo { hasNextPage hasPreviousPage totalCount }\\n" +
+                                "  }\\n" +
+                                "}";
+                    
+                    var variables = new JObject();
+                    if (!string.IsNullOrEmpty(period)) variables["period"] = period;
+                    if (!string.IsNullOrEmpty(status)) variables["status"] = status;
+                    if (!string.IsNullOrEmpty(agingBucket)) variables["agingBucket"] = agingBucket;
+                    variables["limit"] = int.Parse(limit);
+                    variables["offset"] = int.Parse(offset);
+                    
+                    return JsonConvert.SerializeObject(new { query = query, variables = variables });
+                }" />
+            </when>
+            
+            <!-- GET /kpis/{metric} - Get KPIs for a specific metric -->
+            <when condition="@(context.Request.Url.Path.Contains("/kpis/") && context.Request.Method == "GET")">
+                <set-variable name="graphql-query" value="@{
+                    var pathParts = context.Request.Url.Path.Split('/');
+                    var metric = pathParts[pathParts.Length - 1];
+                    var period = context.Request.Url.Query.GetValueOrDefault("period", "");
+                    var groupBy = context.Request.Url.Query.GetValueOrDefault("groupBy", "");
+                    
+                    var query = "query GetKPIs($metric: KPIMetric!, $period: String, $groupBy: KPIGroupBy) {\\n" +
+                                "  kpis(metric: $metric, period: $period, groupBy: $groupBy) {\\n" +
+                                "    metric value period groupBy timestamp\\n" +
+                                "  }\\n" +
+                                "}";
+                    
+                    var variables = new JObject();
+                    variables["metric"] = metric.ToUpper();
+                    if (!string.IsNullOrEmpty(period)) variables["period"] = period;
+                    if (!string.IsNullOrEmpty(groupBy)) variables["groupBy"] = groupBy.ToUpper();
+                    
+                    return JsonConvert.SerializeObject(new { query = query, variables = variables });
+                }" />
+            </when>
+            
+            <!-- Default: No transformation (GraphQL passthrough) -->
+            <otherwise>
+                <!-- Do nothing, let the request pass through as-is -->
+            </otherwise>
+        </choose>
+        
+        <!-- If we have a GraphQL query, transform the request -->
+        <choose>
+            <when condition="@(context.Variables.ContainsKey("graphql-query"))">
+                <!-- Change method to POST for GraphQL -->
+                <set-method>POST</set-method>
+                
+                <!-- Set GraphQL content type -->
+                <set-header name="Content-Type" exists-action="override">
+                    <value>application/json</value>
+                </set-header>
+                
+                <!-- Set the GraphQL query as body -->
+                <set-body>@(context.Variables.GetValueOrDefault<string>("graphql-query", "{}"))</set-body>
+                
+                <!-- Update the backend URL to GraphQL endpoint -->
+                <rewrite-uri template="/graphql" copy-unmatched-params="false" />
+            </when>
+        </choose>
+    </inbound>
+    
+    <backend>
+        <base />
+    </backend>
+    
+    <outbound>
+        <base />
+        
+        <!-- Transform GraphQL response to REST format if needed -->
+        <choose>
+            <!-- If this was a REST request transformed to GraphQL, clean up the response -->
+            <when condition="@(context.Variables.ContainsKey("graphql-query"))">
+                <set-body>@{
+                    var response = context.Response.Body.As<JObject>(preserveContent: true);
+                    
+                    // Check for GraphQL errors
+                    if (response["errors"] != null) {
+                        return JsonConvert.SerializeObject(new {
+                            error = "graphql_error",
+                            message = "GraphQL query failed",
+                            details = response["errors"]
+                        });
+                    }
+                    
+                    // Extract data from GraphQL response
+                    var data = response["data"];
+                    
+                    // For list queries, extract edges and flatten
+                    if (data != null) {
+                        var firstKey = ((JObject)data).Properties().FirstOrDefault()?.Name;
+                        if (firstKey != null) {
+                            var result = data[firstKey];
+                            
+                            // Check if this is a connection type (has edges)
+                            if (result["edges"] != null) {
+                                var items = result["edges"].Select(e => e["node"]).ToList();
+                                var pageInfo = result["pageInfo"];
+                                
+                                return JsonConvert.SerializeObject(new {
+                                    data = items,
+                                    pagination = pageInfo,
+                                    total = pageInfo["totalCount"]
+                                });
+                            } else {
+                                // Single item query
+                                return JsonConvert.SerializeObject(new {
+                                    data = result
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Default: return original response
+                    return response.ToString();
+                }</set-body>
+                
+                <!-- Ensure JSON content type -->
+                <set-header name="Content-Type" exists-action="override">
+                    <value>application/json</value>
+                </set-header>
+            </when>
+        </choose>
+        
+        <!-- Add API version header -->
+        <set-header name="X-API-Version" exists-action="override">
+            <value>v1</value>
+        </set-header>
+        
+        <!-- Add query metadata -->
+        <set-header name="X-Query-Type" exists-action="override">
+            <value>@(context.Variables.ContainsKey("graphql-query") ? "rest-to-graphql" : "graphql-passthrough")</value>
+        </set-header>
+    </outbound>
+    
+    <on-error>
+        <base />
+        
+        <!-- Transform errors to REST format -->
+        <return-response>
+            <set-status code="500" reason="Internal Server Error" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body>@{
+                return JsonConvert.SerializeObject(new {
+                    error = "transformation_error",
+                    message = context.LastError.Message,
+                    source = context.LastError.Source,
+                    reason = context.LastError.Reason,
+                    originalPath = context.Variables.GetValueOrDefault<string>("original-path", ""),
+                    originalMethod = context.Variables.GetValueOrDefault<string>("original-method", "")
+                });
+            }</set-body>
+        </return-response>
+    </on-error>
+</policies>

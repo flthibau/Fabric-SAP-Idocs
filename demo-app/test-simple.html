@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px 0; }
+        #output { background: #f0f0f0; padding: 10px; margin-top: 20px; white-space: pre-wrap; }
+        input { width: 100%; padding: 8px; margin: 5px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Direct API Test</h1>
+    
+    <label>Token (paste here):</label>
+    <input type="text" id="token" placeholder="Paste token from get-token.ps1">
+    
+    <br><br>
+    <button onclick="testAPI()">Test API Call</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        function log(msg) {
+            document.getElementById('output').innerHTML += msg + '\n';
+            console.log(msg);
+        }
+        
+        async function testAPI() {
+            document.getElementById('output').innerHTML = '';
+            
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                log('ERROR: Please paste token first!');
+                return;
+            }
+            
+            log('Testing API call...');
+            log('Token: ' + token.substring(0, 30) + '...');
+            
+            const url = 'https://apim-3pl-flt.azure-api.net/graphql';
+            const query = `query {
+                gold_shipments_in_transits(first: 5) {
+                    items {
+                        shipment_number
+                        carrier_id
+                        customer_name
+                        origin_location
+                        destination_location
+                    }
+                }
+            }`;
+            
+            log('\nURL: ' + url);
+            log('Query: ' + query.substring(0, 100) + '...');
+            
+            try {
+                log('\nCalling fetch()...');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                log('Response status: ' + response.status);
+                log('Response OK: ' + response.ok);
+                
+                const text = await response.text();
+                log('\nResponse body:');
+                log(text);
+                
+                try {
+                    const data = JSON.parse(text);
+                    if (data.data && data.data.gold_shipments_in_transits) {
+                        const items = data.data.gold_shipments_in_transits.items;
+                        log('\n✅ SUCCESS! Got ' + items.length + ' shipments');
+                        log('\nFirst shipment:');
+                        log(JSON.stringify(items[0], null, 2));
+                    } else if (data.errors) {
+                        log('\n❌ GraphQL Errors:');
+                        log(JSON.stringify(data.errors, null, 2));
+                    }
+                } catch (e) {
+                    log('\nCould not parse as JSON: ' + e.message);
+                }
+                
+            } catch (error) {
+                log('\n❌ FETCH FAILED!');
+                log('Error: ' + error.message);
+                log('Error type: ' + error.constructor.name);
+                log('Error stack: ' + error.stack);
+                
+                if (error.message.includes('Failed to fetch')) {
+                    log('\n⚠️  This is a CORS or network error!');
+                    log('Possible causes:');
+                    log('  1. CORS not configured on APIM');
+                    log('  2. Network/firewall blocking');
+                    log('  3. Token invalid/expired');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

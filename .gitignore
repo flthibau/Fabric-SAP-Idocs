@@ -184,3 +184,10 @@ temp/
 
 # Azure
 .azure/
+# Secrets
+demo-app/get-token.ps1
+api/scripts/partner-apps-credentials.json
+
+# Local config
+*.local.json
+*.local.ps1

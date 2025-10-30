@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Fetch Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .output {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 API Fetch Debugger</h1>
+        
+        <div class="test-section">
+            <h2>Configuration</h2>
+            <label>APIM Gateway URL:</label>
+            <input type="text" id="gateway" value="https://apim-3pl-flt.azure-api.net/graphql" style="width: 100%; padding: 8px; margin-top: 5px;">
+            
+            <label>Bearer Token:</label>
+            <textarea id="token" placeholder="Paste your token here..."></textarea>
+            
+            <label>GraphQL Query:</label>
+            <textarea id="query">query {
+  gold_shipments_in_transits(first: 10) {
+    items {
+      shipment_number
+      carrier_id
+      shipment_date
+      delivery_date
+      origin_location
+      destination_location
+      total_weight
+      total_volume
+      number_of_packages
+      status
+    }
+  }
+}</textarea>
+        </div>
+
+        <div class="test-section">
+            <h2>Tests</h2>
+            <button onclick="testFetch()">Test with Fetch API</button>
+            <button onclick="testXHR()">Test with XMLHttpRequest</button>
+            <button onclick="clearOutput()">Clear Output</button>
+            
+            <div id="output" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        async function testFetch() {
+            clearOutput();
+            log('=== FETCH API TEST ===', 'info');
+            
+            const gateway = document.getElementById('gateway').value;
+            const token = document.getElementById('token').value.trim();
+            const query = document.getElementById('query').value;
+
+            if (!token) {
+                log('ERROR: Please paste your token first!', 'error');
+                return;
+            }
+
+            log(`URL: ${gateway}`);
+            log(`Token: ${token.substring(0, 20)}...${token.substring(token.length - 20)}`);
+            log(`Query length: ${query.length} characters`);
+            
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+            
+            const body = JSON.stringify({ query: query });
+            
+            log('\nHeaders:');
+            log(JSON.stringify(headers, null, 2));
+            
+            log('\nBody:');
+            log(body.substring(0, 200) + '...');
+            
+            try {
+                log('\nCalling fetch()...');
+                const startTime = Date.now();
+                
+                const response = await fetch(gateway, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body,
+                    mode: 'cors'
+                });
+                
+                const duration = Date.now() - startTime;
+                log(`Response received in ${duration}ms`, 'success');
+                log(`Status: ${response.status} ${response.statusText}`);
+                
+                log('\nResponse Headers:');
+                for (let [key, value] of response.headers.entries()) {
+                    log(`  ${key}: ${value}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                log(`\nContent-Type: ${contentType}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`\nERROR Response Body:\n${errorText}`, 'error');
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                log('\nSuccess! Response Data:', 'success');
+                log(JSON.stringify(data, null, 2));
+                
+                if (data.errors) {
+                    log('\nGraphQL Errors:', 'error');
+                    log(JSON.stringify(data.errors, null, 2));
+                } else if (data.data) {
+                    const items = data.data.gold_shipments_in_transits?.items || [];
+                    log(`\n✅ Retrieved ${items.length} shipments`, 'success');
+                }
+                
+            } catch (error) {
+                log(`\n❌ FETCH FAILED: ${error.message}`, 'error');
+                log(`Error type: ${error.constructor.name}`);
+                log(`Error stack: ${error.stack}`);
+                
+                // Check for CORS errors
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    log('\n⚠️  This looks like a CORS or network error!', 'error');
+                    log('Possible causes:', 'error');
+                    log('  1. CORS policy not configured on APIM', 'error');
+                    log('  2. Token expired or invalid', 'error');
+                    log('  3. Network/firewall blocking request', 'error');
+                    log('  4. HTTPS certificate issue', 'error');
+                }
+            }
+        }
+
+        function testXHR() {
+            clearOutput();
+            log('=== XMLHttpRequest TEST ===', 'info');
+            
+            const gateway = document.getElementById('gateway').value;
+            const token = document.getElementById('token').value.trim();
+            const query = document.getElementById('query').value;
+
+            if (!token) {
+                log('ERROR: Please paste your token first!', 'error');
+                return;
+            }
+
+            log(`URL: ${gateway}`);
+            log(`Token: ${token.substring(0, 20)}...`);
+            
+            const xhr = new XMLHttpRequest();
+            
+            xhr.onreadystatechange = function() {
+                log(`ReadyState: ${xhr.readyState}`);
+                
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    log(`Status: ${xhr.status}`);
+                    
+                    if (xhr.status === 200) {
+                        log('\nSuccess! Response:', 'success');
+                        log(xhr.responseText);
+                        
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            const items = data.data?.gold_shipments_in_transits?.items || [];
+                            log(`\n✅ Retrieved ${items.length} shipments`, 'success');
+                        } catch (e) {
+                            log('Could not parse JSON response', 'error');
+                        }
+                    } else if (xhr.status === 0) {
+                        log('\n❌ Status 0 - CORS or Network Error!', 'error');
+                        log('The request was blocked before reaching the server.', 'error');
+                    } else {
+                        log(`\nError ${xhr.status}:`, 'error');
+                        log(xhr.responseText);
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                log('❌ XHR Error - Network failure!', 'error');
+            };
+            
+            xhr.ontimeout = function() {
+                log('❌ XHR Timeout!', 'error');
+            };
+            
+            try {
+                log('\nOpening connection...');
+                xhr.open('POST', gateway, true);
+                
+                log('Setting headers...');
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                
+                const body = JSON.stringify({ query: query });
+                log(`Sending request... (body length: ${body.length})`);
+                
+                xhr.send(body);
+            } catch (error) {
+                log(`\n❌ XHR Exception: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
