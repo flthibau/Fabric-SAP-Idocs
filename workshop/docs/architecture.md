@@ -1034,11 +1034,11 @@ Now that you understand the architecture, you're ready to start building!
 
 ✅ **Prerequisites Complete?** → Verify [Setup Prerequisites](../setup/prerequisites.md)  
 ✅ **Environment Ready?** → Follow [Environment Setup](../setup/environment-setup.md)  
-✅ **Ready to Code?** → Start [Module 2: Event Hub Setup](../labs/module2-eventhub-setup.md)  
+✅ **Ready to Build?** → Continue with the workshop modules listed in [Workshop README](../README.md#-workshop-modules)  
 
 **Questions or Issues?**
 - Review the [Workshop README](../README.md)
-- Check the [Troubleshooting Guide](../README.md#troubleshooting)
+- Check the [Troubleshooting Guide](../README.md#-troubleshooting-guide)
 - Open an issue on GitHub
 
 ---
