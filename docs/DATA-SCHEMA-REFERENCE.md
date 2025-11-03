@@ -61,7 +61,7 @@ The data product follows the Medallion Architecture pattern with three progressi
 │   idoc_warehouse_silver, idoc_invoices_silver              │
 │ • Format: Normalized relational tables                     │
 │ • Latency: <2 minutes from SAP event                       │
-│ • Retention: 365 days (2555 for invoices)                  │
+│ • Retention: 365 days (2555 days / 7 years for invoices per SOX) │
 └─────────────────────────────────────────────────────────────┘
                           ↓
         Pre-aggregation via Materialized Views
@@ -264,10 +264,12 @@ An Order represents a customer's request for goods or services to be fulfilled b
 | SLA Status | Condition | Business Meaning |
 |------------|-----------|------------------|
 | **Good** | order_age_hours < 20 AND not shipped | On track to meet SLA |
-| **At Risk** | order_age_hours >= 20 AND order_age_hours < 24 AND not shipped | Approaching SLA deadline |
-| **Breached** | order_age_hours >= 24 AND not shipped | Missed SLA target |
-| **Met** | shipped AND time_to_ship_hours <= 24 | Successfully met SLA |
-| **Missed** | shipped AND time_to_ship_hours > 24 | Shipped but missed SLA |
+| **At Risk** | order_age_hours >= 20 AND order_age_hours < sla_target_hours AND not shipped | Approaching SLA deadline |
+| **Breached** | order_age_hours >= sla_target_hours AND not shipped | Missed SLA target |
+| **Met** | shipped AND time_to_ship_hours <= sla_target_hours | Successfully met SLA |
+| **Missed** | shipped AND time_to_ship_hours > sla_target_hours | Shipped but missed SLA |
+
+**Note:** The default sla_target_hours is 24, but this is configurable per order based on business agreements.
 
 ### Business Rules
 
@@ -446,11 +448,17 @@ A Shipment represents the physical transportation of goods from a warehouse to a
 
 **Formula:**
 ```
-ON_TIME = (actual_delivery_date <= planned_delivery_date)
+ON_TIME = CASE
+  WHEN actual_delivery_date IS NULL THEN NULL  -- Not yet delivered
+  WHEN actual_delivery_date <= planned_delivery_date THEN TRUE
+  ELSE FALSE
+END
 ```
 
 **Business Meaning:**
 - **True:** Shipment delivered on or before promised date (good performance)
+- **False:** Shipment delivered late (performance issue)
+- **Null:** Not yet delivered (in transit or pending)
 - **False:** Shipment delivered late (performance issue)
 - **Null:** Not yet delivered (in transit)
 
@@ -846,7 +854,7 @@ An Invoice is a financial billing document requesting payment from a customer fo
 2. **Amount Validation:** total_amount = subtotal + tax - discount + shipping
 3. **Payment Terms:** Standard is Net 30 days (can vary)
 4. **Immutability:** Invoices >30 days cannot be modified (SOX compliance)
-5. **Retention:** Must retain for 7 years (2555 days) for audit
+5. **Retention:** Must retain for 7 years (approximately 2555 days accounting for leap years) for SOX audit compliance
 6. **Payment Application:** Payments reduce amount_due, oldest invoices first
 7. **Currency Consistency:** All amounts on one invoice must be same currency
 8. **Customer Validation:** customer_id must exist and be active
@@ -1184,15 +1192,19 @@ See `/api/graphql/schema/partner-api.graphql` for complete GraphQL schema.
 #### SLA Performance Calculation
 
 ```kql
+// Note: SLA thresholds should be configurable parameters
+// Default values: warning_threshold = 20 hours, breach_threshold = 24 hours (sla_target_hours)
 .create materialized-view sla_performance on table idoc_orders_silver
 {
     idoc_orders_silver
     | extend
         order_age_hours = datetime_diff('hour', now(), order_date),
+        // Using configurable sla_target_hours field (default: 24)
+        warning_threshold = sla_target_hours * 0.833,  // 20 hours for 24-hour SLA
         sla_status = case(
-            order_age_hours < 20, "Good",
-            order_age_hours < 24, "At Risk",
-            order_age_hours >= 24, "Breached",
+            order_age_hours < warning_threshold, "Good",
+            order_age_hours < sla_target_hours, "At Risk",
+            order_age_hours >= sla_target_hours, "Breached",
             "Unknown"
         )
     | project-away ...
