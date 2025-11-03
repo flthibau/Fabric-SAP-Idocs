@@ -236,11 +236,11 @@ python main.py --count 100  # Generate 100 IDocs
 
 **SQL Engine Row-Level Security** configured in Fabric SQL Analytics Endpoint:
 
+Example RLS role configuration:
+- **Role**: CARRIER-FEDEX
+- **Table**: gold_shipments_in_transit  
+- **Filter Expression (DAX)**:
 ```dax
--- Example RLS role configuration in Fabric Portal
--- Role: CARRIER-FEDEX
--- Table: gold_shipments_in_transit
--- Filter Expression (DAX):
 [carrier_id] = 'CARRIER-FEDEX-GROUP'
 ```
 
