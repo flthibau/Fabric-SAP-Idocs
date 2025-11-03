@@ -86,19 +86,30 @@ Write-Host ""
 # Check Python environment
 Write-Host "🐍 Checking Python environment..." -ForegroundColor Yellow
 try {
-    $pythonVersion = python --version 2>&1
-    Write-Host "✓ Python installed: $pythonVersion" -ForegroundColor Green
-    
-    # Check for azure-eventhub package
-    $pipList = pip list 2>&1 | Select-String "azure-eventhub"
-    if ($pipList) {
-        Write-Host "✓ azure-eventhub package installed: $pipList" -ForegroundColor Green
+    $pythonCheck = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonCheck) {
+        $pythonVersion = python --version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Python installed: $pythonVersion" -ForegroundColor Green
+            
+            # Check for azure-eventhub package
+            $pipList = pip list 2>&1 | Select-String "azure-eventhub"
+            if ($pipList) {
+                Write-Host "✓ azure-eventhub package installed: $pipList" -ForegroundColor Green
+            } else {
+                Write-Host "⚠ Warning: azure-eventhub package not found" -ForegroundColor Yellow
+                Write-Host "   Install with: pip install azure-eventhub" -ForegroundColor Gray
+            }
+        } else {
+            Write-Host "⚠ Warning: Python command failed" -ForegroundColor Yellow
+            Write-Host "   Python is required to run the IDoc simulator" -ForegroundColor Gray
+        }
     } else {
-        Write-Host "⚠ Warning: azure-eventhub package not found" -ForegroundColor Yellow
-        Write-Host "   Install with: pip install azure-eventhub" -ForegroundColor Gray
+        Write-Host "⚠ Warning: Python not found in PATH" -ForegroundColor Yellow
+        Write-Host "   Python is required to run the IDoc simulator" -ForegroundColor Gray
     }
 } catch {
-    Write-Host "⚠ Warning: Python not found in PATH" -ForegroundColor Yellow
+    Write-Host "⚠ Warning: Error checking Python environment" -ForegroundColor Yellow
     Write-Host "   Python is required to run the IDoc simulator" -ForegroundColor Gray
 }
 

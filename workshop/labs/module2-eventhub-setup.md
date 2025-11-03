@@ -60,6 +60,9 @@ An IDoc consists of three main components:
 │  │ E1EDK01 - Header             │   │
 │  │ E1EDKA1 - Partner Info       │   │
 │  │ E1EDP01 - Line Items         │   │
+│  │   ├─ E1EDP19 - Material ID   │   │  ← Nested segments
+│  │   ├─ E1EDP26 - Pricing       │   │
+│  │   └─ E1EDP20 - Schedule      │   │
 │  └──────────────────────────────┘   │
 ├─────────────────────────────────────┤
 │         Status Records              │  ← Processing status (optional)
@@ -98,10 +101,15 @@ The workshop includes a complete sample IDoc at `workshop/samples/sample-idoc.js
       "customer_name": "ACME Corporation"
     }],
     "E1EDP01": [{
+      "segnam": "E1EDP01",
       "matnr": "MAT001",
       "arktx": "Premium Widget A",
       "menge": "10.000",
       "netwr": "255.00"
+    }, {
+      "segnam": "E1EDP19",
+      "idtnr": "MAT001",
+      "ktext": "Premium Widget A"
     }]
   },
   "order_summary": {
@@ -973,5 +981,5 @@ If you encounter issues not covered in this guide:
 ---
 
 **📌 Module Status**: ✅ Complete and tested  
-**Last Updated**: November 2024  
+**Last Updated**: November 3, 2024  
 **Author**: Florent Thibault
