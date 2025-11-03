@@ -51,108 +51,92 @@ graph TD
 
 ### Niveaux de Sécurité
 
+**Note importante**: OneLake Security dans Microsoft Fabric utilise des expressions DAX configurées via le portail Fabric, **PAS des fonctions SQL**. Les exemples ci-dessous montrent les concepts de filtrage, mais l'implémentation réelle se fait via l'interface utilisateur Fabric.
+
 #### 1. Partner Level (Niveau 1)
-```sql
--- Fonction RLS de base - Niveau Partner
-CREATE FUNCTION dbo.PartnerSecurityPredicate(@partner_id NVARCHAR(50))
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS AccessGranted
-    WHERE @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
-    OR CAST(SESSION_CONTEXT(N'UserRole') AS NVARCHAR(50)) = 'SystemAdmin'
-)
-```
+
+**Configuration OneLake Security (via Fabric Portal):**
+
+1. Navigate to: Lakehouse → SQL Analytics Endpoint → Security → Manage security roles
+2. Create role: `CARRIER-FEDEX`
+3. Add filter expression (DAX):
+   ```dax
+   [carrier_id] = "CARRIER-FEDEX-GROUP"
+   ```
+
+**Concept équivalent** (pour compréhension seulement, ne s'applique pas dans OneLake):
+- Filter: Partner voit uniquement ses propres données
+- Admin override: Les admins peuvent voir toutes les données
 
 #### 2. Organization Level (Niveau 2)
-```sql
--- Fonction RLS avancée - Niveau Organisation
-CREATE FUNCTION dbo.OrganizationSecurityPredicate(
-    @partner_id NVARCHAR(50),
-    @organization_id NVARCHAR(50)
-)
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS AccessGranted
-    WHERE (
-        @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
-        AND (
-            @organization_id = CAST(SESSION_CONTEXT(N'OrganizationID') AS NVARCHAR(50))
-            OR CAST(SESSION_CONTEXT(N'OrganizationAccess') AS NVARCHAR(10)) = 'ALL'
-        )
-    )
-    OR CAST(SESSION_CONTEXT(N'UserRole') AS NVARCHAR(50)) = 'SystemAdmin'
-)
-```
+
+**Configuration OneLake Security (via Fabric Portal):**
+
+1. Create role: `ORGANIZATION-ACME`
+2. Add complex DAX filter:
+   ```dax
+   [partner_id] = "CUSTOMER-ACME" 
+   && ([organization_id] = "ORG-001" || [organization_access] = "ALL")
+   ```
+
+**Concept**: Filtre au niveau organisation avec accès conditionnel
 
 #### 3. Department Level (Niveau 3)
-```sql
--- Fonction RLS granulaire - Niveau Département
-CREATE FUNCTION dbo.DepartmentSecurityPredicate(
-    @partner_id NVARCHAR(50),
-    @organization_id NVARCHAR(50),
-    @department_id NVARCHAR(50)
-)
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS AccessGranted
-    WHERE EXISTS (
-        SELECT 1
-        FROM dbo.UserDepartmentAccess uda
-        WHERE uda.user_object_id = CAST(SESSION_CONTEXT(N'UserObjectId') AS NVARCHAR(50))
-        AND uda.partner_id = @partner_id
-        AND uda.organization_id = @organization_id
-        AND uda.department_id = @department_id
-        AND uda.is_active = 1
-    )
-    OR CAST(SESSION_CONTEXT(N'UserRole') AS NVARCHAR(50)) IN ('SystemAdmin', 'OrganizationAdmin')
-)
-```
+
+**Configuration OneLake Security (via Fabric Portal):**
+
+1. Create role: `DEPARTMENT-LOGISTICS`
+2. Add granular DAX filter:
+   ```dax
+   [partner_id] = "CUSTOMER-ACME" 
+   && [organization_id] = "ORG-001" 
+   && [department_id] = "DEPT-LOGISTICS"
+   ```
+
+**Concept**: Filtre au niveau département pour isolation granulaire
+
+**Important**: Contrairement aux fonctions SQL Server RLS (`CREATE FUNCTION` / `CREATE SECURITY POLICY`), OneLake Security:
+- ✅ Se configure via l'interface Fabric Portal
+- ✅ Utilise des expressions DAX, pas T-SQL
+- ✅ S'applique automatiquement à tous les moteurs Fabric (KQL, Spark, SQL, Power BI, GraphQL)
+- ✅ Pas besoin de `SESSION_CONTEXT` - l'authentification Service Principal gère l'identité
 
 ---
 
 ## 🛠️ Implémentation Technique
 
-### 1. Configuration des Politiques de Sécurité
+### 1. Configuration OneLake Security dans Fabric Portal
 
-#### Table Orders - Niveau Partner
-```sql
--- Politique de sécurité pour les commandes
-CREATE SECURITY POLICY PartnerOrdersPolicy
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(partner_id)
-ON gold.orders,
+**Important**: OneLake Security **ne nécessite PAS** de code SQL `CREATE SECURITY POLICY`. Toute la configuration se fait via l'interface Fabric Portal.
 
-ADD FILTER PREDICATE dbo.OrganizationSecurityPredicate(partner_id, customer_organization_id)
-ON gold.orders
-FOR SELECT,
+#### Table Orders - Configuration Partner Level
 
-ADD BLOCK PREDICATE dbo.PartnerSecurityPredicate(partner_id)
-ON gold.orders
-FOR ALL OPERATIONS
+**Via Fabric Portal:**
+1. Lakehouse → SQL Analytics Endpoint → Security → Manage security roles
+2. Create role: `PARTNER-ORDERS`
+3. Table: `gold_orders_daily_summary`
+4. Filter expression (DAX):
+   ```dax
+   [partner_access_scope] = "CUSTOMER"
+   ```
 
-WITH (STATE = ON, SCHEMABINDING = ON);
+#### Table Shipments - Configuration Multi-niveau
+
+**Via Fabric Portal:**
+1. Create role: `CARRIER-FEDEX`
+2. Table: `gold_shipments_in_transit`
+3. Filter expression (DAX):
+   ```dax
+   [carrier_id] = "CARRIER-FEDEX-GROUP"
+   ```
+
+**Pour filtres plus complexes (multi-conditions):**
+```dax
+[carrier_id] = "CARRIER-FEDEX-GROUP" 
+&& ([origin_organization_id] = "ORG-001" || [access_level] = "ALL")
 ```
 
-#### Table Shipments - Multi-niveau
-```sql
--- Politique de sécurité pour les expéditions
-CREATE SECURITY POLICY ShipmentSecurityPolicy
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(carrier_id)
-ON gold.shipments
-FOR SELECT,
-
-ADD FILTER PREDICATE dbo.OrganizationSecurityPredicate(carrier_id, origin_organization_id)
-ON gold.shipments
-FOR SELECT,
-
-ADD FILTER PREDICATE dbo.DepartmentSecurityPredicate(carrier_id, origin_organization_id, origin_department_id)
-ON gold.shipments
-FOR SELECT
-
-WITH (STATE = ON, SCHEMABINDING = ON);
-```
+**Note**: Les `CREATE SECURITY POLICY` SQL ne s'appliquent pas à OneLake Security. DAX filter expressions remplacent cette approche.
 
 ### 2. Gestion des Contextes de Session
 

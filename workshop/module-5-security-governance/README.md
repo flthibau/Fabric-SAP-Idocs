@@ -43,77 +43,93 @@ Implement enterprise-grade security with OneLake Row-Level Security (RLS) and es
 
 ## 🧪 Hands-On Labs
 
-### Lab 1: Create Security Functions
+### Lab 1: Configure OneLake Security RLS Roles
 
-**Create partner security predicate**:
+**OneLake Security** is configured through the **Fabric Portal UI**, not SQL code. This provides storage-layer security that works across all Fabric engines (KQL, Spark, SQL, Power BI, GraphQL).
 
-```sql
--- In Fabric Data Warehouse
-CREATE FUNCTION dbo.PartnerSecurityPredicate(@partner_id NVARCHAR(50))
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS AccessGranted
-    WHERE @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
-       OR IS_MEMBER('DataAdmin') = 1  -- Admins see all data
-)
-GO
+#### Step 1: Navigate to OneLake Security
 
--- Create blocking predicate (prevents unauthorized INSERT/UPDATE/DELETE)
-CREATE FUNCTION dbo.PartnerBlockingPredicate(@partner_id NVARCHAR(50))
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS BlockingGranted
-    WHERE @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
-       OR IS_MEMBER('DataAdmin') = 1
-)
-GO
-```
+1. Open **Fabric Portal**: https://app.fabric.microsoft.com
+2. Navigate to your **Lakehouse** (e.g., `lh_3pl_gold`)
+3. Click on **SQL analytics endpoint** (icon: 🔌)
+4. Go to **Security** → **Manage security roles**
 
-**Verify functions**:
+#### Step 2: Create RLS Role for FedEx Carrier
 
-```sql
--- Test filter predicate
-SELECT * FROM dbo.PartnerSecurityPredicate('FEDEX')
+**Create the role:**
 
--- Test with session context
-EXEC sp_set_session_context 'PartnerID', 'FEDEX', @read_only = 1
-SELECT * FROM gold.shipments  -- Only FEDEX shipments returned
-```
+1. Click **+ New role**
+2. **Role name**: `CARRIER-FEDEX`
+3. **Description**: `FedEx carrier - shipment access only`
+
+**Add filter predicates using DAX expressions:**
+
+1. **Table**: `gold_shipments_in_transit`
+2. **Filter expression** (DAX):
+   ```dax
+   [carrier_id] = "CARRIER-FEDEX-GROUP"
+   ```
+3. Click **Save**
+
+4. **Table**: `gold_sla_performance`
+5. **Filter expression** (DAX):
+   ```dax
+   [carrier_id] = "CARRIER-FEDEX-GROUP"
+   ```
+6. Click **Save**
+
+**Add role members (Service Principal):**
+
+1. Click **Manage members**
+2. Click **+ Add**
+3. Search for your Service Principal (e.g., `sp-partner-fedex`)
+4. Select the Service Principal
+5. Click **Add**
 
 ---
 
-### Lab 2: Apply Security Policies
+### Lab 2: Configure Additional RLS Roles
 
-**Create security policy on Gold tables**:
+#### Warehouse Partner Role
 
-```sql
--- Apply to shipments table
-CREATE SECURITY POLICY PartnerAccessPolicy
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(partner_id) ON gold.shipments,
-ADD BLOCK PREDICATE dbo.PartnerBlockingPredicate(partner_id) ON gold.shipments
-AFTER INSERT,
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(customer_id) ON gold.orders,
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(customer_id) ON gold.invoices
-WITH (STATE = ON, SCHEMABINDING = ON)
-GO
+**Create role:**
+- **Role name**: `WAREHOUSE-EAST`
+- **Description**: `Warehouse East - facility WH003 access`
 
--- Verify policy is active
-SELECT * FROM sys.security_policies
-WHERE name = 'PartnerAccessPolicy'
+**Filter predicate:**
+- **Table**: `gold_warehouse_productivity_daily`
+- **Filter expression** (DAX):
+  ```dax
+  [warehouse_partner_id] = "PARTNER_WH003"
+  ```
 
--- View predicates
-SELECT 
-    sp.name AS policy_name,
-    o.name AS table_name,
-    spp.predicate_definition,
-    spp.predicate_type_desc
-FROM sys.security_policies sp
-JOIN sys.security_predicates spp ON sp.object_id = spp.object_id
-JOIN sys.objects o ON spp.target_object_id = o.object_id
-WHERE sp.name = 'PartnerAccessPolicy'
-```
+**Members**: Add `sp-partner-warehouse-east` Service Principal
+
+#### Customer Role
+
+**Create role:**
+- **Role name**: `CUSTOMER-ACME`
+- **Description**: `ACME Corp - customer data access`
+
+**Filter predicates (multiple tables):**
+- **Table**: `gold_orders_daily_summary`
+  ```dax
+  [partner_access_scope] = "CUSTOMER"
+  ```
+
+- **Table**: `gold_shipments_in_transit`
+  ```dax
+  [partner_access_scope] = "CUSTOMER"
+  ```
+
+- **Table**: `gold_revenue_recognition_realtime`
+  ```dax
+  [partner_access_scope] = "CUSTOMER"
+  ```
+
+**Members**: Add `sp-partner-acme` Service Principal
+
+**Note**: Unlike traditional SQL Server RLS with `CREATE FUNCTION` and `CREATE SECURITY POLICY`, OneLake Security uses DAX filter expressions configured through the Fabric Portal. This provides better performance and works consistently across all Fabric engines.
 
 ---
 

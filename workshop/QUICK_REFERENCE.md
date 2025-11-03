@@ -128,39 +128,47 @@ TableName
 
 ## 🔐 Security & RLS
 
-### Create Security Function
+### Configure OneLake Security RLS
 
+**OneLake Security** is configured through the **Fabric Portal UI**, providing storage-layer security across all Fabric engines:
+
+**Steps:**
+1. Open Fabric Portal → Lakehouse → SQL Analytics Endpoint
+2. Navigate to **Security** → **Manage security roles**
+3. Click **+ New role** (e.g., `CARRIER-FEDEX`)
+4. Add filter predicate using DAX:
+   ```dax
+   [carrier_id] = 'CARRIER-FEDEX-GROUP'
+   ```
+5. Assign Service Principal to role
+
+**Key Difference from SQL Server RLS:**
+- ❌ No `CREATE FUNCTION` or `CREATE SECURITY POLICY` SQL code
+- ✅ UI-based configuration with DAX filter expressions
+- ✅ Works across KQL, Spark, SQL, Power BI, GraphQL automatically
+
+### Test RLS Access
+
+**Via SQL Analytics Endpoint:**
 ```sql
-CREATE FUNCTION dbo.PartnerSecurityPredicate(@partner_id NVARCHAR(50))
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS AccessGranted
-    WHERE @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
-       OR IS_MEMBER('DataAdmin') = 1
-)
+-- Query as Service Principal (automatically filtered by RLS)
+SELECT carrier_id, COUNT(*) as shipment_count
+FROM gold_shipments_in_transit
+GROUP BY carrier_id
+-- Returns only CARRIER-FEDEX-GROUP when authenticated as FedEx SP
 ```
 
-### Apply Security Policy
-
-```sql
-CREATE SECURITY POLICY PartnerAccessPolicy
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(partner_id) 
-ON gold.shipments
-WITH (STATE = ON, SCHEMABINDING = ON)
-```
-
-### Test RLS
-
-```sql
--- Set session context
-EXEC sp_set_session_context 'PartnerID', 'FEDEX', @read_only = 1
-
--- Query data (filtered by RLS)
-SELECT * FROM gold.shipments
-
--- Check session context
-SELECT SESSION_CONTEXT(N'PartnerID')
+**Via GraphQL API:**
+```graphql
+query GetShipments {
+  gold_shipments_in_transits(first: 10) {
+    items {
+      carrier_id
+      shipment_number
+    }
+  }
+}
+# Automatically filtered based on Service Principal's RLS role
 ```
 
 ---
