@@ -1,0 +1,194 @@
+{
+  "idoc_type": "ORDERS05",
+  "message_type": "ORDERS",
+  "sap_system": "S4HPRD",
+  "timestamp": "2024-11-03T10:00:00.000Z",
+  "control": {
+    "tabnam": "EDIDC",
+    "mandt": "100",
+    "docnum": "1234567890123456",
+    "docrel": "740",
+    "status": "03",
+    "direct": "2",
+    "outmod": "2",
+    "idoctyp": "ORDERS05",
+    "mestyp": "ORDERS",
+    "sndpor": "SAPS4H",
+    "sndprt": "LS",
+    "sndprn": "SALES",
+    "rcvpor": "EVENTHUB",
+    "rcvprt": "LS",
+    "rcvprn": "FABRIC",
+    "credat": "20241103",
+    "cretim": "100000",
+    "serial": "12345678901234567890"
+  },
+  "data": {
+    "E1EDK01": [
+      {
+        "segnam": "E1EDK01",
+        "action": "004",
+        "kzabs": "",
+        "curcy": "USD",
+        "hwaer": "USD",
+        "wkurs": "1.00000",
+        "zterm": "Net 30",
+        "kundeuinr": "",
+        "eigenuinr": "",
+        "bsart": "ZOR",
+        "belnr": "ORD-2024-001",
+        "ntgew": "25.000",
+        "gewei": "KGM",
+        "fkart_rl": "",
+        "ablad": "WH-EAST",
+        "bstzd": "",
+        "vsart": "01",
+        "vsart_bez": "Standard Shipping",
+        "recipnt_no": "CUST001",
+        "kzazu": "X",
+        "wkurs_m": "1.00000",
+        "vsbed": "2",
+        "customer_id": "CUST001",
+        "customer_name": "ACME Corporation",
+        "partner_access_scope": "CUSTOMER"
+      }
+    ],
+    "E1EDK02": [
+      {
+        "segnam": "E1EDK02",
+        "qualf": "001",
+        "belnr": "ORD-2024-001",
+        "datum": "20241103"
+      }
+    ],
+    "E1EDK03": [
+      {
+        "segnam": "E1EDK03",
+        "iddat": "012",
+        "datum": "20241103",
+        "uzeit": "100000"
+      },
+      {
+        "segnam": "E1EDK03",
+        "iddat": "002",
+        "datum": "20241110"
+      }
+    ],
+    "E1EDKA1": [
+      {
+        "segnam": "E1EDKA1",
+        "parvw": "AG",
+        "partn": "CUST001",
+        "name1": "ACME Corporation",
+        "name2": "",
+        "name3": "",
+        "stras": "123 Main Street",
+        "ort01": "New York",
+        "ort02": "",
+        "regio": "NY",
+        "pstlz": "10001",
+        "land1": "US",
+        "isoal": "US",
+        "telf1": "+1-555-1234",
+        "telf2": "",
+        "smtp_addr": "orders@acme.com"
+      },
+      {
+        "segnam": "E1EDKA1",
+        "parvw": "WE",
+        "partn": "CUST001",
+        "name1": "ACME Corporation",
+        "stras": "123 Main Street",
+        "ort01": "New York",
+        "regio": "NY",
+        "pstlz": "10001",
+        "land1": "US"
+      }
+    ],
+    "E1EDP01": [
+      {
+        "segnam": "E1EDP01",
+        "posex": "10",
+        "action": "004",
+        "pstyp": "TAN",
+        "menge": "10.000",
+        "menee": "EA",
+        "bmng2": "10.000",
+        "pmene": "EA",
+        "abftz": "0",
+        "vprei": "25.50",
+        "peinh": "1",
+        "netwr": "255.00",
+        "anetw": "255.00",
+        "skfbp": "100.00",
+        "curcy": "USD",
+        "preis": "25.50",
+        "mwskz": "S1",
+        "msatz": "8.00",
+        "meins": "EA",
+        "posex_id": "10",
+        "kzabs": "",
+        "matkl": "WIDGETS",
+        "matwa": "MAT001",
+        "werks": "WH-EAST",
+        "lprio": "2",
+        "route": "01",
+        "lgort": "0001",
+        "vstel": "WH-EAST",
+        "delco": "",
+        "matnr": "MAT001",
+        "arktx": "Premium Widget A - Industrial Grade"
+      },
+      {
+        "segnam": "E1EDP19",
+        "qualf": "002",
+        "idtnr": "MAT001",
+        "ktext": "Premium Widget A - Industrial Grade"
+      },
+      {
+        "segnam": "E1EDP26",
+        "qualf": "003",
+        "betrg": "25.50",
+        "krate": "1.000",
+        "waers": "USD"
+      },
+      {
+        "segnam": "E1EDPT1",
+        "tdid": "0001",
+        "tdline": "Premium Widget A - Industrial Grade"
+      },
+      {
+        "segnam": "E1EDP20",
+        "edatu": "20241110",
+        "wmeng": "10.000",
+        "ameng": "10.000",
+        "edatu_old": "",
+        "ezeit": "000000"
+      }
+    ],
+    "E1EDS01": [
+      {
+        "segnam": "E1EDS01",
+        "sumid": "001",
+        "summe": "255.00",
+        "sunit": "USD",
+        "waerq": "USD"
+      }
+    ],
+    "E1EDKT1": [
+      {
+        "segnam": "E1EDKT1",
+        "tdid": "0001",
+        "tsspras": "E",
+        "tdformat": "*",
+        "tdline": "Order ORD-2024-001 - Priority: Normal"
+      }
+    ]
+  },
+  "order_summary": {
+    "total_value": 255.0,
+    "total_weight_kg": 25.0,
+    "total_items": 1,
+    "currency": "USD"
+  }
+}
