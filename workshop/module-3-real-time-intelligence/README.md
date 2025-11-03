@@ -70,45 +70,133 @@ Azure Event Hub → Eventstream → Eventhouse → KQL Queries → Dashboards
   "destination": {
     "type": "Eventhouse",
     "database": "idoc_realtime",
-    "table": "idoc_raw",
+    "table": "bronze_idocs",
     "dataFormat": "JSON",
     "mappingName": "idoc_mapping"
   }
 }
 ```
 
+**Note**: This creates the Bronze layer in Eventhouse where raw IDoc data is ingested.
+
 ---
 
-### Lab 3: Write KQL Queries
+### Lab 3: Create Silver Layer with KQL Update Policies
+
+**Steps**:
+1. Create Silver layer tables in Eventhouse
+2. Define KQL update policies to transform Bronze → Silver in real-time
+3. Test the transformation pipeline
+4. Verify data quality
+
+**Create Silver Tables**:
+```kql
+// Create silver_shipments table
+.create table silver_shipments (
+    shipment_id: string,
+    shipment_number: string,
+    customer_id: string,
+    customer_name: string,
+    carrier_id: string,
+    ship_date: datetime,
+    delivery_date: datetime,
+    total_weight: real,
+    tracking_number: string,
+    status: string,
+    created_timestamp: datetime,
+    source_idoc_number: string
+)
+
+// Create silver_orders table
+.create table silver_orders (
+    order_id: string,
+    order_number: string,
+    customer_id: string,
+    order_date: datetime,
+    total_value: real,
+    status: string,
+    created_timestamp: datetime,
+    source_idoc_number: string
+)
+```
+
+**Define KQL Update Policy (Bronze → Silver)**:
+```kql
+// Update policy for shipments transformation
+.alter table silver_shipments policy update 
+@'[{
+    "IsEnabled": true,
+    "Source": "bronze_idocs",
+    "Query": "bronze_idocs | where idoc_type == \'SHPMNT\' | extend parsed = parse_json(raw_payload) | project shipment_id = tostring(parsed.header.shipment_id), shipment_number = tostring(parsed.header.shipment_number), customer_id = tostring(parsed.customer.customer_id), customer_name = tostring(parsed.customer.customer_name), carrier_id = tostring(parsed.carrier.carrier_id), ship_date = todatetime(parsed.header.ship_date), delivery_date = todatetime(parsed.header.delivery_date), total_weight = toreal(parsed.total_weight), tracking_number = tostring(parsed.tracking_number), status = tostring(parsed.status), created_timestamp = now(), source_idoc_number = idoc_number",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]'
+
+// Update policy for orders transformation
+.alter table silver_orders policy update 
+@'[{
+    "IsEnabled": true,
+    "Source": "bronze_idocs",
+    "Query": "bronze_idocs | where idoc_type == \'ORDERS\' | extend parsed = parse_json(raw_payload) | project order_id = tostring(parsed.header.order_id), order_number = tostring(parsed.header.order_number), customer_id = tostring(parsed.customer.customer_id), order_date = todatetime(parsed.header.order_date), total_value = toreal(parsed.total_value), status = tostring(parsed.status), created_timestamp = now(), source_idoc_number = idoc_number",
+    "IsTransactional": false,
+    "PropagateIngestionProperties": false
+}]'
+```
+
+**Verify Update Policies**:
+```kql
+// Check that policies are enabled
+.show table silver_shipments policy update
+.show table silver_orders policy update
+
+// Query Silver layer data
+silver_shipments
+| take 10
+
+silver_orders
+| take 10
+```
+
+**Benefits of KQL Update Policies**:
+- ✅ Real-time transformation (sub-second latency)
+- ✅ Automatic processing as data arrives in Bronze
+- ✅ No need for external ETL jobs
+- ✅ Data quality checks can be embedded in the query
+
+---
+
+### Lab 4: Write KQL Queries
 
 **Basic Queries**:
 
 ```kql
-// View recent messages
-idoc_raw
+// View recent Bronze layer messages
+bronze_idocs
 | take 100
 
-// Count by IDoc type
-idoc_raw
+// Count by IDoc type in Bronze
+bronze_idocs
 | summarize count() by idoc_type
 
-// Shipments in last hour
-idoc_raw
-| where ingestion_time() > ago(1h)
-| where idoc_type == "SHPMNT"
-| project timestamp, shipment_id, carrier_id, ship_date
+// View Silver layer shipments
+silver_shipments
+| take 100
 
-// Carrier performance
-idoc_raw
-| where idoc_type == "SHPMNT"
+// Shipments in last hour (Silver layer)
+silver_shipments
+| where created_timestamp > ago(1h)
+| project shipment_id, carrier_id, ship_date, tracking_number
+
+// Carrier performance from Silver layer
+silver_shipments
 | summarize 
     ShipmentCount = count(),
-    AvgWeight = avg(todouble(weight_kg))
+    AvgWeight = avg(total_weight)
   by carrier_id
 | order by ShipmentCount desc
 
-// Time series analysis
-idoc_raw
+// Time series analysis on Bronze ingestion
+bronze_idocs
 | where ingestion_time() > ago(24h)
 | summarize count() by bin(ingestion_time(), 1h), idoc_type
 | render timechart
@@ -117,12 +205,11 @@ idoc_raw
 **Advanced Analytics**:
 
 ```kql
-// On-time delivery rate
-idoc_raw
-| where idoc_type == "DESADV"
+// On-time delivery rate from Silver layer
+silver_shipments
 | extend 
-    IsOnTime = actual_delivery_date <= estimated_delivery_date,
-    DelayDays = datetime_diff('day', actual_delivery_date, estimated_delivery_date)
+    IsOnTime = delivery_date <= ship_date + 7d,
+    DelayDays = datetime_diff('day', delivery_date, ship_date)
 | summarize 
     TotalDeliveries = count(),
     OnTimeDeliveries = countif(IsOnTime),
@@ -131,19 +218,18 @@ idoc_raw
 | extend OnTimeRate = round(100.0 * OnTimeDeliveries / TotalDeliveries, 2)
 | order by OnTimeRate desc
 
-// Anomaly detection
-idoc_raw
-| where idoc_type == "SHPMNT"
-| make-series Count = count() default=0 on ingestion_time() step 1h
+// Anomaly detection on Silver shipments
+silver_shipments
+| make-series Count = count() default=0 on created_timestamp step 1h
 | extend anomalies = series_decompose_anomalies(Count, 1.5)
-| mv-expand ingestion_time to typeof(datetime), Count to typeof(long), anomalies to typeof(double)
+| mv-expand created_timestamp to typeof(datetime), Count to typeof(long), anomalies to typeof(double)
 | where anomalies != 0
 | project ingestion_time, Count, anomaly_score=anomalies
 ```
 
 ---
 
-### Lab 4: Create Real-Time Dashboard
+### Lab 5: Create Real-Time Dashboard
 
 **Steps**:
 1. Create new Real-Time Dashboard in Fabric

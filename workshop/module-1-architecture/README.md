@@ -181,8 +181,10 @@ By the end of this module, you will be able to:
 ┌────────────────────────────────────────┐
 │          Lakehouse Storage             │
 │                                        │
-│  Bronze Layer → Silver Layer → Gold   │
-│  (Raw Data)     (Cleansed)    (Business)|
+│  Gold Layer (Business-Ready)          │
+│  • Materialized lake views            │
+│  • Star schema (dimensions & facts)   │
+│  • Built from mirrored Silver data    │
 │                                        │
 │  • Delta Lake format (ACID)           │
 │  • Unified storage                    │
@@ -191,20 +193,20 @@ By the end of this module, you will be able to:
 ```
 
 **Medallion Architecture**:
-- **Bronze**: Raw IDoc data (as ingested)
-- **Silver**: Cleansed, normalized data
-- **Gold**: Business-ready aggregations and views
+- **Bronze**: Raw IDoc data ingested into Eventhouse
+- **Silver**: Cleansed, normalized data in Eventhouse (via KQL update policies)
+- **Gold**: Business-ready aggregations and views in Lakehouse (via materialized lake views)
 
-##### 4. **Data Engineering (Spark)**
+##### 4. **Materialized Lake Views**
 
 ```
 ┌────────────────────────────────────────┐
-│        Spark Notebooks/Jobs            │
+│     Materialized Lake Views            │
 │                                        │
-│  • PySpark transformations            │
-│  • Data quality checks                │
-│  • ETL/ELT pipelines                  │
-│  • Delta Lake operations              │
+│  • Create Gold layer transformations  │
+│  • Query mirrored Silver Delta tables │
+│  • Incremental refresh                │
+│  • Dimensional modeling (star schema) │
 └────────────────────────────────────────┘
 ```
 
@@ -263,45 +265,51 @@ By the end of this module, you will be able to:
 │   • Error routing                        │
 └────────┬─────────────────────────────────┘
          │
-         ├─────────────────┬────────────────┐
-         ↓                 ↓                ↓
-┌─────────────────┐  ┌──────────────┐  ┌───────────┐
-│   Eventhouse    │  │  Lakehouse   │  │    DLQ    │
-│   (Real-Time)   │  │  (Bronze)    │  │  (Errors) │
-└─────────────────┘  └──────┬───────┘  └───────────┘
-                            │
-                            ↓ Spark Transformations
-                     ┌──────────────────┐
-                     │  Lakehouse       │  4. Data Transformation
-                     │  (Silver Layer)  │
-                     └──────┬───────────┘
-                            │
-                            ↓ Business Logic
-                     ┌──────────────────┐
-                     │  Lakehouse       │  5. Business Views
-                     │  (Gold Layer)    │
-                     └──────┬───────────┘
-                            │
-                            ↓ OneLake Security (RLS)
-                     ┌──────────────────┐
-                     │  Data Warehouse  │  6. Query Interface
-                     │  + GraphQL API   │
-                     └──────┬───────────┘
-                            │
-                            ↓ OAuth2 + APIM
-                     ┌──────────────────┐
-                     │  Azure APIM      │  7. API Gateway
-                     │  • GraphQL       │
-                     │  • REST APIs     │
-                     └──────┬───────────┘
-                            │
-                            ↓
-                     ┌──────────────────┐
-                     │ Partner Apps     │  8. Consumption
-                     │ • FedEx Portal   │
-                     │ • WH-EAST App    │
-                     │ • ACME Customer  │
-                     └──────────────────┘
+         ├─────────────────┐
+         ↓                 ↓
+┌─────────────────┐  ┌───────────┐
+│   Eventhouse    │  │    DLQ    │
+│   (Bronze)      │  │  (Errors) │
+└────────┬────────┘  └───────────┘
+         │
+         ↓ KQL Update Policies (Real-Time)
+┌─────────────────┐
+│   Eventhouse    │  4. Real-Time Transformation
+│   (Silver)      │     to Silver Layer
+└────────┬────────┘
+         │
+         ↓ Auto-Mirror to OneLake
+┌─────────────────┐
+│   Lakehouse     │  5. Mirrored Bronze/Silver
+│   (Delta Tables)│     (Auto-synced)
+└────────┬────────┘
+         │
+         ↓ Materialized Lake Views
+┌─────────────────┐
+│   Lakehouse     │  6. Gold Layer
+│   (Gold Layer)  │     Business Views
+└────────┬────────┘
+         │
+         ↓ OneLake Security (RLS)
+┌─────────────────┐
+│  Data Warehouse │  7. Query Interface
+│  + GraphQL API  │
+└────────┬────────┘
+         │
+         ↓ OAuth2 + APIM
+┌─────────────────┐
+│  Azure APIM     │  8. API Gateway
+│  • GraphQL      │
+│  • REST APIs    │
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ Partner Apps    │  9. Consumption
+│ • FedEx Portal  │
+│ • WH-EAST App   │
+│ • ACME Customer │
+└─────────────────┘
 
 Cross-Cutting Concerns:
 ┌─────────────────────────────────────────┐
@@ -325,14 +333,16 @@ Cross-Cutting Concerns:
 | 1 | SAP System (Simulated) | Generate IDoc message | - |
 | 2 | Azure Event Hub | Receive and buffer message | < 1 sec |
 | 3 | Fabric Eventstream | Validate, enrich, route | < 1 sec |
-| 4 | Eventhouse | Real-time ingestion | < 1 sec |
-| 5 | Lakehouse Bronze | Write raw data | < 5 sec |
-| 6 | Spark Job | Transform to Silver | 1-5 min |
-| 7 | Spark Job | Aggregate to Gold | 1-5 min |
-| 8 | GraphQL API | Query data | < 100 ms |
+| 4 | Eventhouse Bronze | Real-time ingestion to Bronze layer | < 1 sec |
+| 5 | Eventhouse Silver | KQL update policy transforms to Silver | < 1 sec |
+| 6 | Lakehouse (Mirror) | Auto-mirror Bronze/Silver as Delta tables | < 5 sec |
+| 7 | Lakehouse Gold | Materialized lake views create Gold layer | 1-5 min |
+| 8 | GraphQL API | Query data from Gold layer | < 100 ms |
 | 9 | APIM | Route to consumer | < 50 ms |
 
-**Total End-to-End Latency**: < 5 minutes for batch, < 2 seconds for real-time queries
+**Total End-to-End Latency**: 
+- **Real-time path (Eventhouse Bronze/Silver)**: < 5 seconds
+- **Analytics path (Lakehouse Gold)**: 1-5 minutes for materialized view refresh
 
 ---
 
