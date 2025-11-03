@@ -665,6 +665,8 @@ idoc_raw
 
 You can create KQL functions to encapsulate commonly used logic:
 
+> **⚠️ Note:** Creating functions requires **Database Admin** or **Database User** permissions. If you don't have these permissions, use `let` statements instead (see exercises for examples).
+
 ```kql
 // Create a function to get recent IDocs
 .create-or-alter function GetRecentIDocs(hours_back: int = 1) {
@@ -674,6 +676,17 @@ You can create KQL functions to encapsulate commonly used logic:
 }
 
 // Usage
+GetRecentIDocs(24)
+| take 100
+```
+
+**Alternative using `let` (no special permissions required):**
+```kql
+let GetRecentIDocs = (hours_back: int) {
+    idoc_raw
+    | where timestamp > ago(hours_back * 1h)
+    | order by timestamp desc
+};
 GetRecentIDocs(24)
 | take 100
 ```
@@ -695,6 +708,8 @@ idoc_raw
 ### Materialized Views for Performance
 
 For frequently-run queries, create materialized views:
+
+> **⚠️ Note:** Creating materialized views requires **Database Admin** or **Database User** permissions. If you don't have these permissions, you can use regular queries or ask your workspace administrator.
 
 ```kql
 .create async materialized-view OrdersSummary on table idoc_raw

@@ -263,7 +263,10 @@ idoc_raw
 // ADVANCED TOPICS: REUSABLE FUNCTIONS
 //==============================================================================
 
-// Create a function to get recent IDocs
+// NOTE: Creating functions requires Database Admin or Database User permissions.
+// If you don't have these permissions, use the 'let' statement alternative below.
+
+// Option 1: Create stored function (requires admin permissions)
 .create-or-alter function GetRecentIDocs(hours_back: int = 1) {
     idoc_raw
     | where timestamp > ago(hours_back * 1h)
@@ -271,6 +274,15 @@ idoc_raw
 }
 
 // Usage example
+GetRecentIDocs(24)
+| take 100
+
+// Option 2: Use let statement (works for all users, no special permissions)
+let GetRecentIDocs = (hours_back: int) {
+    idoc_raw
+    | where timestamp > ago(hours_back * 1h)
+    | order by timestamp desc
+};
 GetRecentIDocs(24)
 | take 100
 

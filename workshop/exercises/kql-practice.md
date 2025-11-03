@@ -581,8 +581,12 @@ orders
 - Return: message count, distinct types, avg latency, error count
 - Include a health status (Healthy/Warning/Critical)
 
+> **⚠️ Note:** This challenge has two solutions:
+> - **Option A**: Uses `.create-or-alter function` (requires Database Admin/User permissions)
+> - **Option B**: Uses `let` statement (works for all users)
+
 <details>
-<summary>✅ Solution</summary>
+<summary>✅ Solution A: Stored Function (Admin Required)</summary>
 
 ```kql
 .create-or-alter function HealthSummary(hours_back: int = 1) {
@@ -602,6 +606,34 @@ orders
         "✅ HEALTHY"
     )
 }
+
+// Usage
+HealthSummary(24)
+```
+</details>
+
+<details>
+<summary>✅ Solution B: Let Statement (All Users)</summary>
+
+```kql
+// Define the function using let (no special permissions required)
+let HealthSummary = (hours_back: int) {
+    let data = idoc_raw | where timestamp > ago(hours_back * 1h);
+    
+    data
+    | summarize 
+        Message_Count = count(),
+        Distinct_Types = dcount(message_type),
+        Avg_Latency_Sec = avg(datetime_diff('second', ingestion_time(), todatetime(timestamp))),
+        Error_Count = countif(control.status != "03")
+    | extend Error_Rate = 100.0 * todouble(Error_Count) / todouble(Message_Count)
+    | extend Health_Status = case(
+        Message_Count == 0, "❌ CRITICAL - No Data",
+        Error_Rate > 10, "⚠️ WARNING - High Error Rate",
+        Avg_Latency_Sec > 120, "⚠️ WARNING - High Latency",
+        "✅ HEALTHY"
+    )
+};
 
 // Usage
 HealthSummary(24)
