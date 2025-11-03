@@ -49,7 +49,7 @@ A manufacturing company outsources logistics to external partners (carriers, war
 
 ### The Challenge
 - **3 Partner Types**: Carriers (e.g., FedEx), Warehouse Partners (e.g., WH-EAST), Customers (e.g., ACME Corp)
-- **5 Data Entities**: Orders, Shipments, Deliveries, Warehouse Movements, Invoices
+- **5 Data Entities**: Orders, Shipments, Deliveries, Warehouse Movements, Invoices ([📖 Data Schema Reference](./docs/DATA-SCHEMA-REFERENCE.md))
 - **Security Requirement**: Partners must only see data they're authorized to access
 
 ### The Solution
@@ -501,6 +501,11 @@ idoc_shipments_gold
 ### API Reference
 - 📄 [`api/GRAPHQL_QUERIES_REFERENCE.md`](./api/GRAPHQL_QUERIES_REFERENCE.md) - GraphQL schema and examples
 - 📄 [`api/APIM_CONFIGURATION.md`](./api/APIM_CONFIGURATION.md) - APIM policies and configuration
+
+### Data Schema & Model
+- 📄 [`docs/DATA-SCHEMA-REFERENCE.md`](./docs/DATA-SCHEMA-REFERENCE.md) - **Complete business data schema documentation**
+- 📄 [`governance/BUSINESS-GLOSSARY.md`](./governance/BUSINESS-GLOSSARY.md) - Business terminology and definitions
+- 📄 [`governance/3PL-DATA-PRODUCT-DOMAIN-MODEL.md`](./governance/3PL-DATA-PRODUCT-DOMAIN-MODEL.md) - Domain model and business context
 
 ### Governance
 - 📄 [`governance/PURVIEW_DATA_QUALITY_SETUP.md`](./governance/PURVIEW_DATA_QUALITY_SETUP.md) - Purview integration
