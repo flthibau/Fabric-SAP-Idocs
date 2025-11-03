@@ -1,0 +1,349 @@
+//==============================================================================
+// KQL EXAMPLES - Module 3: Real-Time Analytics
+// Microsoft Fabric SAP IDoc Workshop
+//==============================================================================
+// This file contains all example queries from Module 3
+// Copy and paste these into your Fabric KQL Queryset
+//==============================================================================
+
+//==============================================================================
+// SECTION 1: BASIC DATA EXPLORATION
+//==============================================================================
+
+// 1.1 Count total messages received
+idoc_raw
+| count
+
+// 1.2 Display the 10 most recent IDocs received
+idoc_raw
+| take 10
+| order by timestamp desc
+| project timestamp, idoc_type, message_type, sap_system, docnum=control.docnum
+
+// 1.3 Find first and last message received
+idoc_raw
+| summarize 
+    First_Message = min(todatetime(timestamp)),
+    Last_Message = max(todatetime(timestamp)),
+    Total_Messages = count()
+
+// 1.4 List all unique IDoc types with counts
+idoc_raw
+| summarize Count = count() by message_type
+| order by Count desc
+
+//==============================================================================
+// SECTION 2: TIME-SERIES ANALYSIS
+//==============================================================================
+
+// 2.1 Message volume by hour for the last 24 hours
+idoc_raw
+| where timestamp > ago(24h)
+| summarize count() by bin(timestamp, 1h)
+| render timechart
+
+// 2.2 Calculate message processing rate per minute
+idoc_raw
+| where timestamp > ago(1h)
+| summarize Messages = count() by bin(timestamp, 1m)
+| extend Messages_Per_Minute = Messages
+| render timechart
+
+// 2.3 Identify peak activity hours
+idoc_raw
+| extend Hour = hourofday(todatetime(timestamp))
+| summarize Total = count() by Hour
+| order by Hour asc
+| render columnchart
+
+// 2.4 Analyze activity patterns by day of week
+idoc_raw
+| extend DayNum = dayofweek(todatetime(timestamp))
+| summarize Total = count() by DayNum
+| extend Day_Name = case(
+    DayNum == 0d, "Sunday",
+    DayNum == 1d, "Monday",
+    DayNum == 2d, "Tuesday",
+    DayNum == 3d, "Wednesday",
+    DayNum == 4d, "Thursday",
+    DayNum == 5d, "Friday",
+    DayNum == 6d, "Saturday",
+    "Unknown"
+)
+| project Day_Name, Total
+| order by DayNum asc
+
+//==============================================================================
+// SECTION 3: AGGREGATIONS AND GROUPING
+//==============================================================================
+
+// 3.1 Visualize distribution of IDoc types
+idoc_raw
+| summarize count() by message_type
+| render piechart
+
+// 3.2 Top 5 message types by volume
+idoc_raw
+| summarize Total = count() by message_type
+| top 5 by Total desc
+| render columnchart
+
+// 3.3 Categorize messages by business process
+idoc_raw
+| summarize count() by 
+    Category = case(
+        message_type startswith "ORDERS", "Orders",
+        message_type startswith "INVOIC", "Invoices",
+        message_type startswith "WHSCON", "Warehouse Operations",
+        message_type startswith "DESADV", "Delivery Advices",
+        message_type startswith "SHPMNT", "Shipments",
+        "Other"
+    )
+| render piechart
+
+// 3.4 Message volume by type and hour
+idoc_raw
+| where timestamp > ago(7d)
+| summarize Count = count() 
+    by 
+    message_type, 
+    Hour = bin(timestamp, 1h)
+| order by Hour desc, Count desc
+| take 50
+
+//==============================================================================
+// SECTION 4: FILTERING AND ADVANCED QUERIES
+//==============================================================================
+
+// 4.1 Messages from production SAP system
+idoc_raw
+| where sap_system == "PRD"
+| summarize count() by message_type
+| render piechart
+
+// 4.2 Orders from the last 7 days
+idoc_raw
+| where timestamp > ago(7d)
+| where message_type startswith "ORDERS"
+| summarize 
+    Total_Orders = count(),
+    Systems = dcount(sap_system)
+| extend Orders_Per_Day = Total_Orders / 7
+
+// 4.3 High-priority orders from the last 24 hours
+idoc_raw
+| where timestamp > ago(24h)
+| where message_type == "ORDERS05"
+| where control.status == "03"  // Status 03 = Successfully processed
+| project 
+    timestamp,
+    Order_Number = control.docnum,
+    SAP_System = sap_system,
+    Status = control.status
+| order by timestamp desc
+
+// 4.4 Compare current week vs. previous week
+let current_week = idoc_raw 
+    | where timestamp > ago(7d) 
+    | count 
+    | project Current = Count;
+
+let previous_week = idoc_raw 
+    | where timestamp between (ago(14d) .. ago(7d)) 
+    | count 
+    | project Previous = Count;
+
+current_week
+| extend Previous = toscalar(previous_week)
+| extend Change_Percent = round((todouble(Current - Previous) / Previous) * 100, 2)
+| project Current, Previous, Change_Percent
+
+//==============================================================================
+// SECTION 5: PERFORMANCE MONITORING
+//==============================================================================
+
+// 5.1 Calculate ingestion latency metrics
+idoc_raw
+| where timestamp > ago(1h)
+| extend ingestion_time = ingestion_time()
+| extend latency_seconds = datetime_diff('second', ingestion_time, todatetime(timestamp))
+| summarize 
+    Average_Latency = avg(latency_seconds),
+    P50_Latency = percentile(latency_seconds, 50),
+    P95_Latency = percentile(latency_seconds, 95),
+    P99_Latency = percentile(latency_seconds, 99),
+    Max_Latency = max(latency_seconds)
+
+// 5.2 Compare latency across message types
+idoc_raw
+| where timestamp > ago(1h)
+| extend ingestion_time = ingestion_time()
+| extend latency_seconds = datetime_diff('second', ingestion_time, todatetime(timestamp))
+| summarize Average_Latency = avg(latency_seconds) by message_type
+| order by Average_Latency desc
+| render barchart
+
+// 5.3 Analyze message sizes by type
+idoc_raw
+| extend message_size = estimate_data_size(data)
+| summarize 
+    Avg_Size_KB = avg(message_size) / 1024,
+    Min_Size_KB = min(message_size) / 1024,
+    Max_Size_KB = max(message_size) / 1024,
+    Total_Size_MB = sum(message_size) / 1024 / 1024
+    by message_type
+| order by Avg_Size_KB desc
+
+// 5.4 Real-time health check
+let last_hour = idoc_raw | where timestamp > ago(1h);
+last_hour
+| summarize 
+    Messages_Received = count(),
+    Avg_Latency_Sec = avg(datetime_diff('second', ingestion_time(), todatetime(timestamp))),
+    Different_Types = dcount(message_type),
+    Active_Systems = dcount(sap_system),
+    Last_Message = max(todatetime(timestamp))
+| extend 
+    Status = case(
+        Messages_Received > 0 and Avg_Latency_Sec < 60, "✅ HEALTHY",
+        Messages_Received > 0 and Avg_Latency_Sec < 300, "⚠️ DEGRADED",
+        Messages_Received == 0, "❌ NO DATA",
+        "⚠️ WARNING"
+    )
+
+//==============================================================================
+// SECTION 6: ANOMALY DETECTION
+//==============================================================================
+
+// 6.1 Find messages with error status
+idoc_raw
+| extend Status = tostring(control.status)
+| where Status != "03"  // 03 = Success in SAP
+| project 
+    timestamp, 
+    message_type, 
+    Doc_Number = control.docnum,
+    Status,
+    sap_system
+| order by timestamp desc
+
+// 6.2 Detect message spikes (> 2x average)
+let avgRate = toscalar(
+    idoc_raw
+    | where timestamp > ago(7d)
+    | summarize count() by bin(timestamp, 1h)
+    | summarize avg(count_)
+);
+
+idoc_raw
+| where timestamp > ago(24h)
+| summarize Messages = count() by bin(timestamp, 1h)
+| where Messages > avgRate * 2
+| project timestamp, Messages, Average = avgRate, Ratio = Messages / avgRate
+| order by timestamp desc
+
+// 6.3 Identify periods without messages (potential data gaps)
+idoc_raw
+| where timestamp > ago(24h)
+| make-series Messages = count() default = 0 on timestamp step 5m
+| mv-expand timestamp, Messages
+| where Messages == 0
+| project timestamp
+
+// 6.4 Messages with latency > 5 minutes
+idoc_raw
+| where timestamp > ago(1h)
+| extend ingestion_time = ingestion_time()
+| extend latency_minutes = datetime_diff('minute', ingestion_time, todatetime(timestamp))
+| where latency_minutes > 5
+| project timestamp, message_type, latency_minutes, docnum=control.docnum
+| order by latency_minutes desc
+
+//==============================================================================
+// ADVANCED TOPICS: REUSABLE FUNCTIONS
+//==============================================================================
+
+// Create a function to get recent IDocs
+.create-or-alter function GetRecentIDocs(hours_back: int = 1) {
+    idoc_raw
+    | where timestamp > ago(hours_back * 1h)
+    | order by timestamp desc
+}
+
+// Usage example
+GetRecentIDocs(24)
+| take 100
+
+//==============================================================================
+// ADVANCED TOPICS: WORKING WITH DYNAMIC DATA
+//==============================================================================
+
+// Extract nested customer information from ORDERS
+idoc_raw
+| where message_type == "ORDERS05"
+| extend 
+    Order_Number = control.docnum,
+    Customer_ID = tostring(data.E1EDK01[0].BELNR)
+| take 10
+
+//==============================================================================
+// BONUS QUERIES: BUSINESS ANALYTICS
+//==============================================================================
+
+// Daily summary report
+idoc_raw
+| where timestamp > ago(24h)
+| summarize 
+    Total_Messages = count(),
+    Distinct_Types = dcount(message_type),
+    SAP_Systems = dcount(sap_system),
+    First_Message = min(todatetime(timestamp)),
+    Last_Message = max(todatetime(timestamp))
+| extend Duration_Hours = datetime_diff('hour', Last_Message, First_Message)
+| extend Rate_Per_Hour = Total_Messages / Duration_Hours
+
+// Executive dashboard metrics
+idoc_raw
+| where timestamp > ago(1h)
+| summarize 
+    ['Messages (last hour)'] = count(),
+    ['Messages/minute'] = count() / 60,
+    ['IDoc Types'] = dcount(message_type),
+    ['Source Systems'] = dcount(sap_system)
+
+// Period-over-period comparison
+let currentHour = idoc_raw | where timestamp > ago(1h) | count | project Current = Count;
+let previousHour = idoc_raw | where timestamp between (ago(2h) .. ago(1h)) | count | project Previous = Count;
+
+currentHour
+| extend Previous = toscalar(previousHour)
+| extend Change = round((todouble(Current - Previous) / Previous) * 100, 2)
+| project 
+    Current_Hour = Current,
+    Previous_Hour = Previous,
+    Change_Percent = Change
+
+//==============================================================================
+// QUERY OPTIMIZATION EXAMPLES
+//==============================================================================
+
+// ✅ GOOD: Filter early
+idoc_raw
+| where timestamp > ago(7d)
+| where hourofday(timestamp) > 8
+| summarize count() by message_type
+
+// ✅ GOOD: Use take for random samples
+idoc_raw
+| where timestamp > ago(1h)
+| take 100
+
+// ✅ GOOD: Project to reduce column count
+idoc_raw
+| where timestamp > ago(1h)
+| project timestamp, message_type, docnum=control.docnum
+| order by timestamp
+
+//==============================================================================
+// END OF KQL EXAMPLES
+//==============================================================================
