@@ -1,8 +1,8 @@
-# Module 4: Lakehouse Medallion Architecture
+# Module 4: Lakehouse Gold Layer with Materialized Views
 
 **Estimated Time:** 120 minutes  
 **Difficulty:** Advanced  
-**Prerequisites:** Modules 1-3 completed, familiarity with PySpark or SQL
+**Prerequisites:** Modules 1-3 completed (Eventhouse with Bronze/Silver layers), familiarity with SQL
 
 ---
 
@@ -10,22 +10,23 @@
 
 By completing this module, you will:
 
-- ✅ Understand the **Medallion Architecture** pattern (Bronze → Silver → Gold)
-- ✅ Build a **Bronze layer** for raw SAP IDoc data ingestion
-- ✅ Transform data into a **Silver layer** with cleansing and validation
-- ✅ Create **Gold layer** business views and aggregations
-- ✅ Implement **data quality checks** at each layer
+- ✅ Understand the **Medallion Architecture** pattern with Eventhouse and Lakehouse
+- ✅ Understand **OneLake mirroring** from Eventhouse to Lakehouse
+- ✅ Verify **Bronze and Silver layers** mirrored as Delta tables
+- ✅ Create **Gold layer** business views using materialized lake views
+- ✅ Design **star schema** (dimensions and facts)
+- ✅ Implement **data quality checks** at the Gold layer
 - ✅ Apply **performance optimization** techniques for Delta Lake
-- ✅ Follow **best practices** for production data pipelines
+- ✅ Follow **best practices** for production data products
 
 ---
 
 ## 📚 Table of Contents
 
-1. [Medallion Architecture Concepts](#1-medallion-architecture-concepts)
-2. [Bronze Layer: Raw Data Ingestion](#2-bronze-layer-raw-data-ingestion)
-3. [Silver Layer: Data Cleansing](#3-silver-layer-data-cleansing)
-4. [Gold Layer: Business Views](#4-gold-layer-business-views)
+1. [Medallion Architecture with Eventhouse & Lakehouse](#1-medallion-architecture-with-eventhouse--lakehouse)
+2. [OneLake Mirroring Concepts](#2-onelake-mirroring-concepts)
+3. [Gold Layer: Dimensions](#3-gold-layer-dimensions)
+4. [Gold Layer: Facts with Materialized Views](#4-gold-layer-facts-with-materialized-views)
 5. [Data Quality Checks](#5-data-quality-checks)
 6. [Performance Optimization](#6-performance-optimization)
 7. [Best Practices](#7-best-practices)
@@ -34,43 +35,57 @@ By completing this module, you will:
 
 ---
 
-## 1. Medallion Architecture Concepts
+## 1. Medallion Architecture with Eventhouse & Lakehouse
 
-### 1.1 What is Medallion Architecture?
+### 1.1 What is the Medallion Architecture in Fabric?
 
-The **Medallion Architecture** is a data design pattern that organizes data into three progressive layers of quality and refinement:
+The **Medallion Architecture** in Microsoft Fabric organizes data into three progressive layers, with Bronze/Silver in Eventhouse for real-time processing and Gold in Lakehouse for analytics:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     🥉 BRONZE LAYER                              │
-│                        (Raw Data)                                │
+│                  (Raw Data in EVENTHOUSE)                        │
 │                                                                  │
-│  • Stores raw data exactly as received from source systems      │
-│  • Minimal to no transformation                                 │
-│  • Preserves data lineage and audit trail                       │
-│  • Append-only or overwrite based on requirements               │
-│  • Retention: 90-365 days                                       │
+│  • Real-time ingestion of IDocs via Eventstream                 │
+│  • Stored as KQL tables in Eventhouse                           │
+│  • Minimal transformation - preserves original data             │
+│  • Auto-mirrored to Lakehouse as Delta tables                   │
+│  • Retention: 90 days in Eventhouse                             │
 └────────────────────────┬────────────────────────────────────────┘
                          │
-                         │ Validation + Parsing
+                         │ KQL Update Policies (Real-Time)
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     🥈 SILVER LAYER                              │
-│                   (Cleansed & Validated)                         │
+│              (Cleansed & Validated in EVENTHOUSE)                │
 │                                                                  │
-│  • Cleaned and validated data                                   │
-│  • Standardized formats and schemas                             │
+│  • Real-time transformation via KQL update policies                │
+│  • Cleaned and validated data in Eventhouse                     │
+│  • Standardized formats and typed schemas                       │
 │  • Deduplicated records                                         │
-│  • Business logic applied (enrichment, calculations)            │
-│  • Retention: 1-7 years                                         │
+│  • Auto-mirrored to Lakehouse as Delta tables                   │
+│  • Retention: 90 days in Eventhouse                             │
 └────────────────────────┬────────────────────────────────────────┘
                          │
-                         │ Aggregation + Modeling
+                         │ OneLake Mirroring (Automatic)
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                MIRRORED BRONZE/SILVER - LAKEHOUSE                │
+│                     (Delta Lake Tables)                          │
+│                                                                  │
+│  • Automatic sync from Eventhouse via OneLake                   │
+│  • Available for Spark, SQL, Power BI engines                   │
+│  • No manual ETL needed                                         │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         │ Materialized Lake Views
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     🥇 GOLD LAYER                                │
-│                  (Business-Ready Analytics)                      │
+│            (Business-Ready Analytics in LAKEHOUSE)               │
 │                                                                  │
+│  • Dimensional model (star schema) via materialized views       │
+│  • Dimensions and fact tables                                   │
 │  • Pre-aggregated metrics and KPIs                              │
 │  • Business-specific views (orders, shipments, revenue)         │
 │  • Optimized for fast query performance                         │
@@ -79,14 +94,16 @@ The **Medallion Architecture** is a data design pattern that organizes data into
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Why Use Medallion Architecture?
+### 1.2 Why Use This Medallion Pattern?
 
 **Benefits:**
 
-1. **Data Quality**: Progressive refinement ensures high-quality data for analytics
-2. **Flexibility**: Raw data preserved for reprocessing and new use cases
-3. **Performance**: Optimized layers reduce query latency
-4. **Governance**: Clear lineage from source to consumption
+1. **Real-Time Processing**: Bronze/Silver in Eventhouse enables sub-second transformations
+2. **Unified Storage**: OneLake mirroring provides seamless integration between real-time and analytics
+3. **Data Quality**: Progressive refinement ensures high-quality data
+4. **Flexibility**: Raw data preserved in Bronze for reprocessing
+5. **Performance**: Gold layer optimized for analytics queries
+6. **Governance**: Clear lineage from source to consumption
 5. **Scalability**: Incremental processing reduces compute costs
 6. **Maintainability**: Separation of concerns makes debugging easier
 

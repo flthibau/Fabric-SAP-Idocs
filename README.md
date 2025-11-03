@@ -81,11 +81,20 @@ Azure Event Hubs (idoc-events)
 ╚══════════════════════════════════════════════════════════╝
       ↓
 ╔══════════════════════════════════════════════════════════╗
+║  MICROSOFT FABRIC REAL-TIME INTELLIGENCE                 ║
+║  ┌─────────────────────────────────────────────────┐    ║
+║  │  Eventhouse (KQL Database)                      │    ║
+║  │  - Bronze: Raw IDocs (KQL tables)               │    ║
+║  │  - Silver: Normalized (KQL update policies)     │    ║
+║  │  - Auto-mirrored to Lakehouse                   │    ║
+║  └─────────────────────────────────────────────────┘    ║
+╚══════════════════════════════════════════════════════════╝
+      ↓
+╔══════════════════════════════════════════════════════════╗
 ║  MICROSOFT FABRIC LAKEHOUSE                              ║
 ║  ┌─────────────────────────────────────────────────┐    ║
 ║  │  OneLake Storage (Delta Lake)                   │    ║
-║  │  - Bronze: Raw IDocs                            │    ║
-║  │  - Silver: Normalized tables                    │    ║
+║  │  - Bronze/Silver: Mirrored from Eventhouse      │    ║
 ║  │  - Gold: Business views (materialized)          │    ║
 ║  └─────────────────────────────────────────────────┘    ║
 ╚══════════════════════════════════════════════════════════╝
@@ -164,8 +173,9 @@ python main.py --count 100  # Generate 100 IDocs
 **Microsoft Fabric workspace setup and data transformations**
 
 - **Eventstream**: Real-Time Intelligence ingestion configuration
-- **Data Engineering**: Spark notebooks for Bronze/Silver/Gold layers
-- **Warehouse**: SQL schemas and materialized views
+- **Eventhouse**: KQL databases for Bronze/Silver layers with update policies
+- **Lakehouse**: Mirrored Bronze/Silver tables and Gold layer materialized views
+- **Warehouse**: SQL schemas and Row-Level Security
 - **OneLake Security**: Row-Level Security configuration guides
 
 **Key Files**:
@@ -365,15 +375,18 @@ cd api/scripts
 
 #### 3️⃣ Configure Microsoft Fabric
 
-**Eventstream**:
-1. Create Eventstream: `idoc-ingestion-stream`
-2. Source: Azure Event Hubs (`eh-idoc-flt8076/idoc-events`)
-3. Destination: Eventhouse `kql-3pl-logistics`
+**Eventhouse (Bronze & Silver Layers)**:
+1. Create Eventhouse: `kql-3pl-logistics`
+2. Create Eventstream: `idoc-ingestion-stream`
+3. Source: Azure Event Hubs (`eh-idoc-flt8076/idoc-events`)
+4. Destination: Eventhouse Bronze layer
+5. Configure KQL update policies for Silver layer transformations
 
-**Lakehouse**:
+**Lakehouse (Gold Layer)**:
 1. Create Lakehouse: `lakehouse_3pl`
-2. Run Bronze/Silver/Gold transformation notebooks
-3. Create materialized views
+2. Verify Bronze/Silver tables mirrored from Eventhouse
+3. Create dimension tables for Gold layer
+4. Create fact tables using materialized lake views
 
 **OneLake Security**:
 ```sql
