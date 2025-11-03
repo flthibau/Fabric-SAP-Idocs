@@ -19,7 +19,9 @@ By completing this workshop, you will be able to:
 - ✅ Understand the end-to-end architecture for SAP IDoc integration with Fabric
 - ✅ Configure Azure Event Hub for real-time IDoc ingestion
 - ✅ Build streaming analytics with Eventhouse and KQL
-- ✅ Implement medallion architecture (Bronze/Silver/Gold) in OneLake
+- ✅ Implement medallion architecture: Bronze/Silver in Eventhouse, Gold in Lakehouse
+- ✅ Use KQL update policies for real-time Silver layer transformations
+- ✅ Create Gold layer with materialized lake views querying mirrored Silver data
 - ✅ Configure Row-Level Security and data governance with Purview
 - ✅ Develop GraphQL and REST APIs for data access
 - ✅ Set up monitoring and operational dashboards
@@ -90,19 +92,21 @@ Setting up and configuring Azure Event Hub for IDoc ingestion.
 ### [Module 3: Real-Time Intelligence](./module-3-real-time-intelligence/README.md)
 **Duration**: 90 minutes
 
-Working with Eventhouse and KQL queries for real-time analytics.
+Working with Eventhouse, KQL queries, and building Bronze/Silver layers with KQL update policies.
 
 **Topics Covered**:
 - Microsoft Fabric Real-Time Intelligence overview
 - Eventhouse (KQL Database) concepts
-- Eventstream configuration and data ingestion
+- Eventstream configuration and Bronze layer ingestion
+- KQL update policies for Silver layer transformations
 - KQL query fundamentals
 - Real-time dashboards and visualizations
 
 **Hands-on Lab**:
-- Create Fabric Eventhouse
+- Create Fabric Eventhouse with Bronze layer
 - Configure Eventstream with Event Hub source
-- Write KQL queries for data exploration
+- Create Silver layer tables with KQL update policies
+- Write KQL queries for Bronze and Silver data
 - Build real-time analytics queries
 - Create KQL dashboards
 
@@ -116,27 +120,27 @@ Working with Eventhouse and KQL queries for real-time analytics.
 ### [Module 4: Data Lakehouse](./module-4-data-lakehouse/README.md)
 **Duration**: 120 minutes
 
-Building Bronze/Silver/Gold layers in OneLake with Delta Lake.
+Building the Gold layer in OneLake using mirrored Bronze/Silver data and materialized lake views.
 
 **Topics Covered**:
-- Medallion architecture pattern
-- Fabric Lakehouse and OneLake concepts
-- Delta Lake and ACID transactions
-- PySpark transformations
-- Data quality and validation
+- Medallion architecture with Eventhouse and Lakehouse integration
+- OneLake mirroring from Eventhouse to Lakehouse
+- Gold layer creation using materialized lake views
+- Star schema design (dimensions and facts)
+- Delta Lake optimization
 
 **Hands-on Lab**:
-- Create Fabric Lakehouse
-- Build Bronze layer (raw IDoc ingestion)
-- Implement Silver layer transformations
-- Create Gold layer business views
-- Configure OneLake shortcuts
-- Optimize Delta tables
+- Create Fabric Lakehouse and verify mirroring
+- Understand OneLake automatic mirroring
+- Build Gold layer dimension tables
+- Create fact tables with materialized lake views
+- Design aggregation views for analytics
+- Optimize Gold layer Delta tables
 
 **Prerequisites**:
 - Microsoft Fabric workspace
-- Module 3 completed (Eventhouse with data)
-- Python/PySpark knowledge
+- Module 3 completed (Eventhouse with Bronze/Silver layers)
+- Basic SQL knowledge
 
 ---
 

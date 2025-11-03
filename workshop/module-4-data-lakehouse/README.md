@@ -111,75 +111,12 @@ The mirroring happens automatically when both Eventhouse and Lakehouse are in th
 
 ---
 
+
 ### Lab 3: Build Gold Layer - Dimension Tables
-        current_timestamp().alias("created_timestamp")
-    ) \
-    .filter(col("shipment_id").isNotNull())
 
-# Data quality score
-silver_df = silver_df.withColumn(
-    "data_quality_score",
-    when(col("customer_id").isNotNull() & col("carrier_id").isNotNull(), 1.0)
-    .when(col("customer_id").isNotNull() | col("carrier_id").isNotNull(), 0.8)
-    .otherwise(0.5)
-)
+**Purpose**: Create dimension tables for the star schema that will be used in Gold layer facts.
 
-# Upsert to Silver table
-silver_table = DeltaTable.forName(spark, "lakehouse_3pl.silver_shipments")
-
-silver_table.alias("target").merge(
-    silver_df.alias("source"),
-    "target.shipment_id = source.shipment_id"
-).whenMatchedUpdateAll() \
- .whenNotMatchedInsertAll() \
- .execute()
-
-print(f"Processed {silver_df.count()} shipment records")
-```
-
-**Create Silver Tables**:
-
-```sql
--- Shipments
-CREATE TABLE silver_shipments (
-    shipment_id STRING PRIMARY KEY,
-    shipment_number STRING,
-    customer_id STRING,
-    customer_name STRING,
-    carrier_id STRING,
-    ship_date DATE,
-    delivery_date DATE,
-    origin_location STRING,
-    destination_location STRING,
-    total_weight DECIMAL(18,2),
-    status STRING,
-    data_quality_score DECIMAL(3,2),
-    source_idoc_number STRING,
-    created_timestamp TIMESTAMP,
-    modified_timestamp TIMESTAMP
-)
-USING DELTA
-PARTITIONED BY (ship_date);
-
--- Orders
-CREATE TABLE silver_orders (
-    order_id STRING PRIMARY KEY,
-    order_number STRING,
-    customer_id STRING,
-    order_date DATE,
-    total_value DECIMAL(18,2),
-    status STRING,
-    created_timestamp TIMESTAMP
-)
-USING DELTA
-PARTITIONED BY (order_date);
-```
-
----
-
-### Lab 4: Build Gold Layer
-
-**Create Dimensions**:
+**Dimensions to Create**:
 
 ```sql
 -- Dimension: Customer
@@ -193,7 +130,8 @@ CREATE TABLE gold_dim_customer (
     valid_to DATE,
     is_current BOOLEAN
 )
-USING DELTA;
+USING DELTA
+LOCATION 'Files/gold/dimensions/customer';
 
 -- Dimension: Carrier
 CREATE TABLE gold_dim_carrier (
@@ -203,175 +141,224 @@ CREATE TABLE gold_dim_carrier (
     service_type STRING,
     is_current BOOLEAN
 )
-USING DELTA;
-```
+USING DELTA
+LOCATION 'Files/gold/dimensions/carrier';
 
-**Create Facts**:
-
-```sql
--- Fact: Shipments
-CREATE TABLE gold_fact_shipment (
-    shipment_key BIGINT GENERATED ALWAYS AS IDENTITY,
-    shipment_id STRING,
-    customer_key INT,
-    carrier_key INT,
-    ship_date_key INT,
-    delivery_date_key INT,
-    total_weight DECIMAL(18,2),
-    total_value DECIMAL(18,2),
-    on_time_delivery_flag BOOLEAN,
-    delivery_delay_days INT,
-    created_timestamp TIMESTAMP,
-    FOREIGN KEY (customer_key) REFERENCES gold_dim_customer(customer_key),
-    FOREIGN KEY (carrier_key) REFERENCES gold_dim_carrier(carrier_key)
+-- Dimension: Location
+CREATE TABLE gold_dim_location (
+    location_key INT GENERATED ALWAYS AS IDENTITY,
+    location_id STRING,
+    location_name STRING,
+    city STRING,
+    state STRING,
+    country STRING,
+    is_current BOOLEAN
 )
 USING DELTA
-PARTITIONED BY (ship_date_key);
+LOCATION 'Files/gold/dimensions/location';
 ```
 
-**Aggregation View**:
+**Populate Dimensions from Mirrored Silver**:
 
 ```sql
--- Materialized view for daily shipment summary
-CREATE OR REPLACE VIEW gold_shipments_daily_summary AS
-SELECT 
-    ship_date,
+-- Populate Customer dimension from mirrored Silver data
+INSERT INTO gold_dim_customer (customer_id, customer_name, customer_type, region, valid_from, is_current)
+SELECT DISTINCT
     customer_id,
+    customer_name,
+    'EXTERNAL' as customer_type,
+    'US-EAST' as region,
+    current_date() as valid_from,
+    true as is_current
+FROM silver_shipments
+WHERE customer_id IS NOT NULL
+  AND customer_id NOT IN (SELECT customer_id FROM gold_dim_customer WHERE is_current = true);
+
+-- Populate Carrier dimension
+INSERT INTO gold_dim_carrier (carrier_id, carrier_name, service_type, is_current)
+SELECT DISTINCT
     carrier_id,
-    COUNT(*) as shipment_count,
-    SUM(total_weight) as total_weight,
-    SUM(total_value) as total_value,
-    SUM(CASE WHEN on_time_delivery_flag THEN 1 ELSE 0 END) as on_time_count,
-    ROUND(100.0 * SUM(CASE WHEN on_time_delivery_flag THEN 1 ELSE 0 END) / COUNT(*), 2) as on_time_rate
-FROM gold_fact_shipment f
-JOIN gold_dim_customer c ON f.customer_key = c.customer_key
-JOIN gold_dim_carrier cr ON f.carrier_key = cr.carrier_key
-GROUP BY ship_date, customer_id, carrier_id;
+    carrier_id as carrier_name,
+    'GROUND' as service_type,
+    true as is_current
+FROM silver_shipments
+WHERE carrier_id IS NOT NULL
+  AND carrier_id NOT IN (SELECT carrier_id FROM gold_dim_carrier WHERE is_current = true);
 ```
 
 ---
 
-### Lab 5: Optimize Delta Tables
+### Lab 4: Build Gold Layer - Fact Tables with Materialized Lake Views
+
+**Purpose**: Create fact tables using materialized lake views that query the mirrored Silver Delta tables. Materialized lake views provide incremental refresh and optimize query performance.
+
+**Create Fact Table Using Materialized Lake View**:
+
+```sql
+-- Create fact_shipment as a materialized lake view
+CREATE MATERIALIZED VIEW gold_fact_shipment
+AS
+SELECT 
+    s.shipment_id,
+    c.customer_key,
+    cr.carrier_key,
+    CAST(date_format(s.ship_date, 'yyyyMMdd') AS INT) as ship_date_key,
+    CAST(date_format(s.delivery_date, 'yyyyMMdd') AS INT) as delivery_date_key,
+    s.total_weight,
+    0 as total_value, -- Placeholder, would join with orders if available
+    CASE WHEN s.delivery_date <= s.ship_date + INTERVAL 7 DAYS THEN true ELSE false END as on_time_delivery_flag,
+    datediff(s.delivery_date, s.ship_date) as delivery_delay_days,
+    s.ship_date,
+    s.delivery_date,
+    s.status,
+    s.created_timestamp
+FROM silver_shipments s
+LEFT JOIN gold_dim_customer c ON s.customer_id = c.customer_id AND c.is_current = true
+LEFT JOIN gold_dim_carrier cr ON s.carrier_id = cr.carrier_id AND cr.is_current = true;
+
+-- Create fact_order as a materialized lake view  
+CREATE MATERIALIZED VIEW gold_fact_order
+AS
+SELECT 
+    o.order_id,
+    c.customer_key,
+    CAST(date_format(o.order_date, 'yyyyMMdd') AS INT) as order_date_key,
+    o.order_number,
+    o.total_value,
+    o.status,
+    o.order_date,
+    o.created_timestamp
+FROM silver_orders o
+LEFT JOIN gold_dim_customer c ON o.customer_id = c.customer_id AND c.is_current = true;
+```
+
+**Benefits of Materialized Lake Views**:
+- ✅ Incremental refresh (only processes new/changed data)
+- ✅ Automatically maintains materialized results
+- ✅ Optimized query performance
+- ✅ Seamless integration with Power BI Direct Lake mode
+
+**Refresh Materialized Views**:
+```sql
+-- Manually refresh a materialized view
+REFRESH MATERIALIZED VIEW gold_fact_shipment;
+
+-- Set automatic refresh schedule (via Fabric UI or API)
+-- Refresh every hour or based on data changes
+```
+
+---
+
+### Lab 5: Create Gold Layer Aggregation Views
+
+**Purpose**: Create business-ready aggregated views for common analytics queries.
+
+```sql
+-- Daily shipment summary view
+CREATE OR REPLACE VIEW gold_shipments_daily_summary AS
+SELECT 
+    f.ship_date,
+    c.customer_id,
+    c.customer_name,
+    cr.carrier_id,
+    cr.carrier_name,
+    COUNT(*) as shipment_count,
+    SUM(f.total_weight) as total_weight,
+    SUM(CASE WHEN f.on_time_delivery_flag THEN 1 ELSE 0 END) as on_time_count,
+    ROUND(100.0 * SUM(CASE WHEN f.on_time_delivery_flag THEN 1 ELSE 0 END) / COUNT(*), 2) as on_time_rate,
+    AVG(f.delivery_delay_days) as avg_delay_days
+FROM gold_fact_shipment f
+JOIN gold_dim_customer c ON f.customer_key = c.customer_key
+JOIN gold_dim_carrier cr ON f.carrier_key = cr.carrier_key
+GROUP BY f.ship_date, c.customer_id, c.customer_name, cr.carrier_id, cr.carrier_name;
+
+-- Customer performance metrics
+CREATE OR REPLACE VIEW gold_customer_metrics AS
+SELECT 
+    c.customer_id,
+    c.customer_name,
+    c.customer_type,
+    COUNT(DISTINCT f.shipment_id) as total_shipments,
+    SUM(f.total_weight) as total_weight,
+    SUM(f.total_value) as total_value,
+    ROUND(100.0 * SUM(CASE WHEN f.on_time_delivery_flag THEN 1 ELSE 0 END) / COUNT(*), 2) as on_time_rate,
+    MAX(f.ship_date) as last_shipment_date
+FROM gold_fact_shipment f
+JOIN gold_dim_customer c ON f.customer_key = c.customer_key
+GROUP BY c.customer_id, c.customer_name, c.customer_type;
+
+-- Carrier performance metrics
+CREATE OR REPLACE VIEW gold_carrier_metrics AS
+SELECT 
+    cr.carrier_id,
+    cr.carrier_name,
+    COUNT(DISTINCT f.shipment_id) as total_shipments,
+    SUM(f.total_weight) as total_weight,
+    ROUND(100.0 * SUM(CASE WHEN f.on_time_delivery_flag THEN 1 ELSE 0 END) / COUNT(*), 2) as on_time_rate,
+    AVG(f.delivery_delay_days) as avg_delay_days,
+    MAX(f.ship_date) as last_shipment_date
+FROM gold_fact_shipment f
+JOIN gold_dim_carrier cr ON f.carrier_key = cr.carrier_key
+GROUP BY cr.carrier_id, cr.carrier_name;
+```
+
+---
+
+### Lab 6: Optimize Gold Layer Delta Tables
 
 **Optimization Commands**:
 
 ```sql
--- Optimize with Z-Ordering
-OPTIMIZE silver_shipments
-ZORDER BY (customer_id, ship_date);
+-- Optimize dimension tables with Z-Ordering
+OPTIMIZE gold_dim_customer
+ZORDER BY (customer_id);
 
-OPTIMIZE gold_fact_shipment
-ZORDER BY (customer_key, ship_date_key);
+OPTIMIZE gold_dim_carrier
+ZORDER BY (carrier_id);
+
+-- Note: Materialized views are automatically optimized by Fabric
 
 -- Vacuum old versions (retain 7 days)
-VACUUM silver_shipments RETAIN 168 HOURS;
-VACUUM gold_fact_shipment RETAIN 168 HOURS;
+VACUUM gold_dim_customer RETAIN 168 HOURS;
+VACUUM gold_dim_carrier RETAIN 168 HOURS;
 
--- Table statistics
-ANALYZE TABLE silver_shipments COMPUTE STATISTICS;
-ANALYZE TABLE gold_fact_shipment COMPUTE STATISTICS FOR ALL COLUMNS;
-```
-
-**Schedule Optimization**:
-
-```python
-# In Spark notebook - schedule daily
-from pyspark.sql.functions import current_date
-
-def optimize_tables():
-    tables = [
-        "silver_shipments",
-        "silver_orders", 
-        "gold_fact_shipment"
-    ]
-    
-    for table in tables:
-        print(f"Optimizing {table}...")
-        spark.sql(f"OPTIMIZE lakehouse_3pl.{table}")
-        spark.sql(f"VACUUM lakehouse_3pl.{table} RETAIN 168 HOURS")
-
-# Run daily via Fabric Pipeline
-optimize_tables()
-```
-
----
-
-### Lab 6: Configure OneLake Shortcuts
-
-**Create Shortcuts to Eventhouse**:
-
-```python
-# Python API to create shortcuts
-import requests
-
-def create_onelake_shortcut(
-    workspace_id,
-    lakehouse_id,
-    shortcut_name,
-    target_path,
-    target_type="Eventhouse"
-):
-    url = f"https://api.fabric.microsoft.com/v1/workspaces/{workspace_id}/items/{lakehouse_id}/shortcuts"
-    
-    payload = {
-        "name": shortcut_name,
-        "path": "Files/shortcuts",
-        "target": {
-            "type": target_type,
-            "path": target_path
-        }
-    }
-    
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    
-    response = requests.post(url, json=payload, headers=headers)
-    return response.json()
-
-# Create shortcut to real-time data
-create_onelake_shortcut(
-    workspace_id="<workspace-id>",
-    lakehouse_id="<lakehouse-id>",
-    shortcut_name="realtime_shipments",
-    target_path="/databases/idoc_realtime/tables/idoc_raw",
-    target_type="Eventhouse"
-)
+-- Compute statistics for query optimization
+ANALYZE TABLE gold_dim_customer COMPUTE STATISTICS FOR ALL COLUMNS;
+ANALYZE TABLE gold_dim_carrier COMPUTE STATISTICS FOR ALL COLUMNS;
 ```
 
 ---
 
 ## 📋 Best Practices
 
-**Bronze Layer**:
+**Bronze Layer (in Eventhouse)**:
 - ✅ Keep raw data as-is for audit trail
 - ✅ Partition by ingestion date and type
-- ✅ Use JSON or Parquet for flexibility
+- ✅ Use KQL tables for real-time queries
 
-**Silver Layer**:
-- ✅ Implement data quality checks
-- ✅ Deduplicate records
-- ✅ Normalize data structure
-- ✅ Use Delta Lake for ACID guarantees
+**Silver Layer (in Eventhouse)**:
+- ✅ Use KQL update policies for real-time transformation
+- ✅ Implement data quality checks in KQL
+- ✅ Deduplicate records automatically
+- ✅ Automatic mirroring to Lakehouse ensures analytics availability
 
-**Gold Layer**:
-- ✅ Design for query performance
-- ✅ Use star/snowflake schema
-- ✅ Create materialized aggregations
-- ✅ Optimize with Z-Ordering
+**Gold Layer (in Lakehouse)**:
+- ✅ Design for query performance using star schema
+- ✅ Use materialized lake views for incremental refresh
+- ✅ Create aggregation views for common analytics patterns
+- ✅ Optimize with Z-Ordering on frequently queried columns
 
-**Delta Table Management**:
-- ✅ Regular OPTIMIZE operations
-- ✅ VACUUM old versions
-- ✅ Update table statistics
-- ✅ Monitor table sizes
+**OneLake Mirroring**:
+- ✅ Automatic - no manual ETL needed
+- ✅ Real-time sync from Eventhouse to Lakehouse
+- ✅ Provides single source of truth via OneLake
+- ✅ Enables multi-engine access (KQL, Spark, SQL, Power BI)
 
 ---
 
 ## ✅ Module Completion
 
-**Summary**: Built complete medallion architecture with Bronze/Silver/Gold layers using Delta Lake
+**Summary**: Built Gold layer in Lakehouse using materialized lake views that query mirrored Silver Delta tables from Eventhouse, completing the medallion architecture
 
 **Next**: [Module 5: Security & Governance](../module-5-security-governance/README.md) - Implement RLS and Purview integration
 
