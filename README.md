@@ -236,7 +236,7 @@ python main.py --count 100  # Generate 100 IDocs
 
 **SQL Engine Row-Level Security** configured in Fabric SQL Analytics Endpoint:
 
-```sql
+```dax
 -- Example RLS role configuration in Fabric Portal
 -- Role: CARRIER-FEDEX
 -- Table: gold_shipments_in_transit
@@ -384,7 +384,7 @@ cd api/scripts
 4. Create fact tables using materialized lake views
 
 **Row-Level Security (RLS)**:
-```
+```bash
 # Configure in Fabric Portal (SQL Analytics Endpoint)
 # Navigate to: Lakehouse → SQL analytics endpoint → Security → Manage security roles
 # See fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md for detailed steps
