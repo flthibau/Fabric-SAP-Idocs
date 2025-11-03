@@ -133,7 +133,7 @@ graph TD
 **Pour filtres plus complexes (multi-conditions):**
 ```dax
 [carrier_id] = "CARRIER-FEDEX-GROUP" 
-&& ([origin_organization_id] = "ORG-001" OR [access_level] = "ALL")
+&& ([origin_organization_id] = "ORG-001" || [access_level] = "ALL")
 ```
 
 **Note**: Les `CREATE SECURITY POLICY` SQL ne s'appliquent pas à OneLake Security. DAX filter expressions remplacent cette approche.
