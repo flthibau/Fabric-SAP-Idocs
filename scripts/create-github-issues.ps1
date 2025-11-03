@@ -1,17 +1,15 @@
-# Script PowerShell pour créer automatiquement les issues de la roadmap
-# Ce script utilise l'API GitHub pour créer les issues définies dans la roadmap
+# PowerShell script to automatically create roadmap issues
+# This script uses the GitHub API to create issues defined in the roadmap
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$GitHubToken,
     
-    [Parameter(Mandatory=$true)]
-    [string]$Repository,
-    
-    [string]$Owner = "flthibau"
+    [string]$Owner = "flthibau",
+    [string]$Repository = "Fabric-SAP-Idocs"
 )
 
-# Configuration de base
+# Base configuration
 $Headers = @{
     "Authorization" = "token $GitHubToken"
     "Accept" = "application/vnd.github.v3+json"
@@ -20,10 +18,10 @@ $Headers = @{
 
 $BaseUrl = "https://api.github.com/repos/$Owner/$Repository"
 
-Write-Host "🚀 Création des issues pour la roadmap SAP IDoc Data Product" -ForegroundColor Green
+Write-Host "🚀 Creating issues for SAP IDoc Data Product roadmap" -ForegroundColor Green
 Write-Host "Repository: $Owner/$Repository" -ForegroundColor Cyan
 
-# Fonction pour créer une issue
+# Function to create an issue
 function New-GitHubIssue {
     param(
         [string]$Title,
@@ -44,16 +42,16 @@ function New-GitHubIssue {
     
     try {
         $Response = Invoke-RestMethod -Uri "$BaseUrl/issues" -Method Post -Headers $Headers -Body ($IssueData | ConvertTo-Json -Depth 3)
-        Write-Host "✅ Issue créée: #$($Response.number) - $Title" -ForegroundColor Green
+        Write-Host "✅ Issue created: #$($Response.number) - $Title" -ForegroundColor Green
         return $Response
     }
     catch {
-        Write-Host "❌ Erreur lors de la création de l'issue: $Title" -ForegroundColor Red
+        Write-Host "❌ Error creating issue: $Title" -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
     }
 }
 
-# Fonction pour créer un milestone
+# Function to create a milestone
 function New-GitHubMilestone {
     param(
         [string]$Title,
@@ -69,89 +67,89 @@ function New-GitHubMilestone {
     
     try {
         $Response = Invoke-RestMethod -Uri "$BaseUrl/milestones" -Method Post -Headers $Headers -Body ($MilestoneData | ConvertTo-Json)
-        Write-Host "📅 Milestone créé: $Title" -ForegroundColor Green
+        Write-Host "📅 Milestone created: $Title" -ForegroundColor Green
         return $Response
     }
     catch {
-        Write-Host "❌ Erreur lors de la création du milestone: $Title" -ForegroundColor Red
+        Write-Host "❌ Error creating milestone: $Title" -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
     }
 }
 
-# Création des milestones
-Write-Host "`n📅 Création des milestones..." -ForegroundColor Yellow
+# Creating milestones
+Write-Host "`n📅 Creating milestones..." -ForegroundColor Yellow
 
-$Milestone1 = New-GitHubMilestone -Title "Phase 1: Sécurité et Gouvernance" -Description "Amélioration RLS et documentation modèle de données" -DueDate "2025-01-31T23:59:59Z"
-$Milestone2 = New-GitHubMilestone -Title "Phase 2: APIs et Accès aux Données" -Description "APIs REST complètes et intégration Purview" -DueDate "2025-04-30T23:59:59Z"
-$Milestone3 = New-GitHubMilestone -Title "Phase 3: Intelligence Opérationnelle" -Description "Agent RTI et cas d'usage métier" -DueDate "2025-07-31T23:59:59Z"
-$Milestone4 = New-GitHubMilestone -Title "Phase 4: Contrats de Données" -Description "Gouvernance avancée et contrats dans Purview" -DueDate "2025-10-31T23:59:59Z"
+$Milestone1 = New-GitHubMilestone -Title "Phase 1: Security & Governance" -Description "RLS enhancement and data model documentation" -DueDate "2025-01-31T23:59:59Z"
+$Milestone2 = New-GitHubMilestone -Title "Phase 2: Modern API Layer" -Description "Complete REST APIs and Purview integration" -DueDate "2025-04-30T23:59:59Z"
+$Milestone3 = New-GitHubMilestone -Title "Phase 3: Operational Intelligence" -Description "RTI agent and business use cases" -DueDate "2025-07-31T23:59:59Z"
+$Milestone4 = New-GitHubMilestone -Title "Phase 4: Data Contracts" -Description "Advanced governance and Purview data contracts" -DueDate "2025-10-31T23:59:59Z"
 
-# Définition des Epics et Issues
-Write-Host "`n📋 Création des Epics et Issues..." -ForegroundColor Yellow
+# Defining Epics and Issues
+Write-Host "`n📋 Creating Epics and Issues..." -ForegroundColor Yellow
 
-# Epic 1: Amélioration du Row-Level Security (RLS)
+# Epic 1: OneLake Security - Row-Level Security Enhancement
 $Epic1Body = @"
-## 🎯 Vue d'ensemble de l'Epic
+## 🎯 Epic Overview
 
-Améliorer l'implémentation du Row-Level Security (RLS) dans OneLake pour offrir une sécurité granulaire et multi-niveaux pour les données SAP IDoc.
+Enhance the Row-Level Security (RLS) implementation in OneLake to provide granular, multi-level security for SAP IDoc data.
 
-### Phase de la Roadmap
-- **Phase**: Phase 1 - Sécurité et Gouvernance
-- **Priorité**: Critique
+### Roadmap Phase
+- **Phase**: Phase 1 - Security & Governance
+- **Priority**: Critical
 
-## 📊 Valeur Métier
+## 📊 Business Value
 
-### Problème à Résoudre
-L'implémentation actuelle du RLS nécessite des améliorations pour supporter des scénarios de sécurité plus complexes et des performances optimisées.
+### Problem Statement
+Current RLS implementation needs improvements to support more complex security scenarios and optimized performance.
 
-### Valeur Apportée
-- Sécurité renforcée pour les données sensibles
-- Performance améliorée des requêtes filtrées
-- Support de scenarios multi-tenants avancés
+### Value Delivered
+- Enhanced security for sensitive data
+- Improved query performance with filtering
+- Support for advanced multi-tenant scenarios
 
-### Métriques de Succès
-- 100% des accès filtrés correctement
-- < 10ms overhead de performance
-- 0 faille de sécurité identifiée
+### Success Metrics
+- 100% of access properly filtered
+- < 10ms performance overhead
+- 0 security breaches identified
 
-## 🛠️ Scope Technique
+## 🛠️ Technical Scope
 
-### Composants Impactés
+### Impacted Components
 - [x] OneLake Security
 - [x] Fabric Warehouse
 - [x] GraphQL API
-- [x] Documentation sécurité
+- [x] Security documentation
 
-## 📋 Issues Associées
-- Issue #1 - Audit configuration RLS actuelle
-- Issue #2 - Design nouveaux modèles sécurité  
-- Issue #3 - Implémentation RLS multi-niveaux
-- Issue #4 - Tests sécurité et validation
+## 📋 Related Issues
+- Issue #1 - Audit current RLS configuration
+- Issue #2 - Design new security models
+- Issue #3 - Implement multi-level RLS
+- Issue #4 - Security testing and validation
 "@
 
-New-GitHubIssue -Title "[EPIC] Amélioration du Row-Level Security (RLS)" -Body $Epic1Body -Labels @("epic", "component-security", "priority-critical") -Milestone $Milestone1.number
+New-GitHubIssue -Title "[EPIC] OneLake Security - Row-Level Security Enhancement" -Body $Epic1Body -Labels @("epic", "component-security", "priority-critical", "roadmap") -Milestone $Milestone1.number
 
-# Issues de l'Epic 1
+# Epic 1 Issues
 $Issues = @(
     @{
-        Title = "Audit de la configuration RLS actuelle"
-        Body = "Analyser l'implémentation actuelle du RLS dans OneLake et identifier les points d'amélioration."
-        Labels = @("technical-task", "component-security", "effort-m")
+        Title = "Audit current RLS configuration"
+        Body = "Analyze the current RLS implementation in OneLake and identify improvement areas."
+        Labels = @("technical-task", "component-security", "effort-m", "roadmap")
     },
     @{
-        Title = "Design des nouveaux modèles de sécurité"
-        Body = "Concevoir les nouveaux modèles de sécurité RLS pour supporter les cas d'usage avancés."
-        Labels = @("technical-task", "component-security", "effort-l")
+        Title = "Design new security models"
+        Body = "Design new RLS security models to support advanced use cases."
+        Labels = @("technical-task", "component-security", "effort-l", "roadmap")
     },
     @{
-        Title = "Implémentation RLS multi-niveaux"
-        Body = "Implémenter la nouvelle configuration RLS avec support multi-niveaux dans OneLake."
-        Labels = @("technical-task", "component-security", "effort-xl")
+        Title = "Implement multi-level RLS"
+        Body = "Implement the new RLS configuration with multi-level support in OneLake."
+        Labels = @("technical-task", "component-security", "effort-xl", "roadmap")
     },
     @{
-        Title = "Tests de sécurité et validation"
-        Body = "Créer et exécuter une suite complète de tests de sécurité pour valider l'implémentation RLS."
-        Labels = @("technical-task", "component-security", "effort-l")
+        Title = "Security testing and validation"
+        Body = "Create and execute a complete security test suite to validate RLS implementation."
+        Labels = @("technical-task", "component-security", "effort-l", "roadmap")
     }
 )
 
@@ -159,63 +157,63 @@ foreach ($Issue in $Issues) {
     New-GitHubIssue -Title $Issue.Title -Body $Issue.Body -Labels $Issue.Labels -Milestone $Milestone1.number
 }
 
-# Epic 2: Documentation du Modèle de Données
+# Epic 2: Data Model Documentation
 $Epic2Body = @"
-## 🎯 Vue d'ensemble de l'Epic
+## 🎯 Epic Overview
 
-Créer une documentation complète et professionnelle du modèle de données SAP IDoc pour faciliter la compréhension et l'utilisation du data product.
+Create comprehensive and professional documentation of the SAP IDoc data model to facilitate understanding and usage of the data product.
 
-### Phase de la Roadmap
-- **Phase**: Phase 1 - Sécurité et Gouvernance
-- **Priorité**: Élevée
+### Roadmap Phase
+- **Phase**: Phase 1 - Security & Governance
+- **Priority**: High
 
-## 📊 Valeur Métier
+## 📊 Business Value
 
-### Problème à Résoudre
-Le modèle de données actuel manque de documentation claire et structurée, rendant difficile l'onboarding et l'utilisation par les partenaires.
+### Problem Statement
+The current data model lacks clear and structured documentation, making onboarding and partner usage difficult.
 
-### Valeur Apportée
-- Amélioration de l'expérience développeur
-- Réduction du temps d'intégration
-- Meilleure gouvernance des données
+### Value Delivered
+- Improved developer experience
+- Reduced integration time
+- Better data governance
 
-### Métriques de Succès
-- Documentation complète à 100%
-- Temps d'onboarding réduit de 50%
-- 0 question récurrente sur le modèle
+### Success Metrics
+- 100% documentation completeness
+- 50% reduction in onboarding time
+- 0 recurring questions about the model
 
-## 🛠️ Scope Technique
+## 🛠️ Technical Scope
 
-### Composants Impactés
-- [x] Documentation technique
-- [x] Schémas de données
-- [x] Diagrammes ERD
-- [x] Glossaire métier
+### Impacted Components
+- [x] Technical documentation
+- [x] Data schemas
+- [x] ERD diagrams
+- [x] Business glossary
 "@
 
-New-GitHubIssue -Title "[EPIC] Documentation du Modèle de Données" -Body $Epic2Body -Labels @("epic", "documentation", "priority-high") -Milestone $Milestone1.number
+New-GitHubIssue -Title "[EPIC] Data Model Documentation" -Body $Epic2Body -Labels @("epic", "documentation", "priority-high", "roadmap") -Milestone $Milestone1.number
 
-# Issues de l'Epic 2
+# Epic 2 Issues
 $Issues2 = @(
     @{
-        Title = "Cartographie des entités de données existantes"
-        Body = "Identifier et cataloguer toutes les entités de données présentes dans le système."
-        Labels = @("documentation", "effort-m")
+        Title = "Map existing data entities"
+        Body = "Identify and catalog all data entities present in the system."
+        Labels = @("documentation", "effort-m", "roadmap")
     },
     @{
-        Title = "Documentation du schéma de données business"
-        Body = "Créer la documentation détaillée des schémas de données avec définitions métier."
-        Labels = @("documentation", "effort-l")
+        Title = "Document business data schema"
+        Body = "Create detailed documentation of data schemas with business definitions."
+        Labels = @("documentation", "effort-l", "roadmap")
     },
     @{
-        Title = "Diagrammes ERD et relations"
-        Body = "Concevoir les diagrammes Entity-Relationship et documenter les relations entre entités."
-        Labels = @("documentation", "effort-m")
+        Title = "ERD diagrams and relationships"
+        Body = "Design Entity-Relationship diagrams and document entity relationships."
+        Labels = @("documentation", "effort-m", "roadmap")
     },
     @{
-        Title = "Glossaire métier et définitions"
-        Body = "Créer un glossaire complet des termes métier et définitions techniques."
-        Labels = @("documentation", "effort-s")
+        Title = "Business glossary and definitions"
+        Body = "Create a comprehensive glossary of business terms and technical definitions."
+        Labels = @("documentation", "effort-s", "roadmap")
     }
 )
 
@@ -223,103 +221,103 @@ foreach ($Issue in $Issues2) {
     New-GitHubIssue -Title $Issue.Title -Body $Issue.Body -Labels $Issue.Labels -Milestone $Milestone1.number
 }
 
-# Epic 3: APIs REST Complètes
+# Epic 3: Complete REST APIs
 $Epic3Body = @"
-## 🎯 Vue d'ensemble de l'Epic
+## 🎯 Epic Overview
 
-Développer des APIs REST complètes avec opérations CRUD pour offrir un accès moderne et standardisé aux données SAP IDoc.
+Develop complete REST APIs with CRUD operations to provide modern and standardized access to SAP IDoc data.
 
-### Phase de la Roadmap
-- **Phase**: Phase 2 - APIs et Accès aux Données
-- **Priorité**: Critique
+### Roadmap Phase
+- **Phase**: Phase 2 - Modern API Layer
+- **Priority**: Critical
 
-## 📊 Valeur Métier
+## 📊 Business Value
 
-### Problème à Résoudre
-L'accès aux données est actuellement limité à GraphQL. Les partenaires demandent des APIs REST standards pour faciliter l'intégration.
+### Problem Statement
+Data access is currently limited to GraphQL. Partners request standard REST APIs to facilitate integration.
 
-### Valeur Apportée
-- Accès standardisé via REST
-- Support CRUD complet
-- Intégration facilitée pour les partenaires
+### Value Delivered
+- Standardized access via REST
+- Full CRUD support
+- Simplified partner integration
 
-### Métriques de Succès
-- APIs REST fonctionnelles 100%
-- < 100ms latence moyenne
-- Documentation OpenAPI complète
+### Success Metrics
+- 100% functional REST APIs
+- < 100ms average latency
+- Complete OpenAPI documentation
 "@
 
-New-GitHubIssue -Title "[EPIC] APIs REST Complètes" -Body $Epic3Body -Labels @("epic", "component-api", "priority-critical") -Milestone $Milestone2.number
+New-GitHubIssue -Title "[EPIC] Complete REST APIs" -Body $Epic3Body -Labels @("epic", "component-api", "priority-critical", "roadmap") -Milestone $Milestone2.number
 
-# Epic 4: Matérialisation de l'Accès API dans Purview
+# Epic 4: API Access Materialization in Purview
 $Epic4Body = @"
-## 🎯 Vue d'ensemble de l'Epic
+## 🎯 Epic Overview
 
-Intégrer et référencer toutes les APIs (GraphQL et REST) dans Microsoft Purview pour une gouvernance centralisée.
+Integrate and reference all APIs (GraphQL and REST) in Microsoft Purview for centralized governance.
 
-### Phase de la Roadmap
-- **Phase**: Phase 2 - APIs et Accès aux Données
-- **Priorité**: Élevée
+### Roadmap Phase
+- **Phase**: Phase 2 - Modern API Layer
+- **Priority**: High
 
-## 📊 Valeur Métier
+## 📊 Business Value
 
-### Problème à Résoudre
-Les APIs ne sont pas référencées dans le catalogue de données, limitant la découvrabilité et la gouvernance.
+### Problem Statement
+APIs are not referenced in the data catalog, limiting discoverability and governance.
 
-### Valeur Apportée
-- Catalogue unifié des APIs
-- Métadonnées d'accès centralisées
-- Monitoring et gouvernance améliorés
+### Value Delivered
+- Unified API catalog
+- Centralized access metadata
+- Improved monitoring and governance
 "@
 
-New-GitHubIssue -Title "[EPIC] Matérialisation de l'Accès API dans Purview" -Body $Epic4Body -Labels @("epic", "component-purview", "priority-high") -Milestone $Milestone2.number
+New-GitHubIssue -Title "[EPIC] API Access Materialization in Purview" -Body $Epic4Body -Labels @("epic", "component-purview", "priority-high", "roadmap") -Milestone $Milestone2.number
 
-# Epic 5: Agent Opérationnel RTI
+# Epic 5: RTI Operational Agent
 $Epic5Body = @"
-## 🎯 Vue d'ensemble de l'Epic
+## 🎯 Epic Overview
 
-Développer un agent RTI (Real-Time Intelligence) pour automatiser les cas d'usage métier et l'analyse opérationnelle.
+Develop an RTI (Real-Time Intelligence) agent to automate business use cases and operational analysis.
 
-### Phase de la Roadmap
-- **Phase**: Phase 3 - Intelligence Opérationnelle
-- **Priorité**: Élevée
+### Roadmap Phase
+- **Phase**: Phase 3 - Operational Intelligence
+- **Priority**: High
 
-## 📊 Valeur Métier
+## 📊 Business Value
 
-### Problème à Résoudre
-Les analyses opérationnelles sont majoritairement manuelles, limitant la réactivité et l'efficacité.
+### Problem Statement
+Operational analyses are mostly manual, limiting reactivity and efficiency.
 
-### Valeur Apportée
-- Automatisation des analyses
-- Détection proactive d'anomalies
-- Insights temps réel pour les opérations
+### Value Delivered
+- Automated analysis
+- Proactive anomaly detection
+- Real-time operational insights
 "@
 
-New-GitHubIssue -Title "[EPIC] Agent Opérationnel RTI" -Body $Epic5Body -Labels @("epic", "component-fabric", "priority-high") -Milestone $Milestone3.number
+New-GitHubIssue -Title "[EPIC] RTI Operational Agent" -Body $Epic5Body -Labels @("epic", "component-fabric", "priority-high", "roadmap") -Milestone $Milestone3.number
 
-# Epic 6: Data Contracts dans Purview
+# Epic 6: Data Contracts in Purview
 $Epic6Body = @"
-## 🎯 Vue d'ensemble de l'Epic
+## 🎯 Epic Overview
 
-Implémenter des contrats de données formalisés dans Microsoft Purview pour garantir la qualité et la conformité.
+Implement formalized data contracts in Microsoft Purview to guarantee quality and compliance.
 
-### Phase de la Roadmap
-- **Phase**: Phase 4 - Contrats de Données et Gouvernance Avancée
-- **Priorité**: Critique
+### Roadmap Phase
+- **Phase**: Phase 4 - Data Contracts & Advanced Governance
+- **Priority**: Critical
 
-## 📊 Valeur Métier
+## 📊 Business Value
 
-### Problème à Résoudre
-Absence de contrats formalisés pour garantir la qualité et la conformité des données.
+### Problem Statement
+Absence of formalized contracts to guarantee data quality and compliance.
 
-### Valeur Apportée
-- Qualité des données garantie
-- Conformité automatisée
-- SLA de données formalisés
+### Value Delivered
+- Guaranteed data quality
+- Automated compliance
+- Formalized data SLAs
 "@
 
-New-GitHubIssue -Title "[EPIC] Data Contracts dans Purview" -Body $Epic6Body -Labels @("epic", "component-purview", "priority-critical") -Milestone $Milestone4.number
+New-GitHubIssue -Title "[EPIC] Data Contracts in Purview" -Body $Epic6Body -Labels @("epic", "component-purview", "priority-critical", "roadmap") -Milestone $Milestone4.number
 
-Write-Host "`n🎉 Création des issues terminée!" -ForegroundColor Green
-Write-Host "📊 Accédez à votre projet GitHub pour voir toutes les issues créées." -ForegroundColor Cyan
+Write-Host "`n🎉 Issue creation completed!" -ForegroundColor Green
+Write-Host "📊 Access your GitHub project to see all created issues." -ForegroundColor Cyan
 Write-Host "🔗 https://github.com/$Owner/$Repository/issues" -ForegroundColor Blue
