@@ -397,7 +397,7 @@ A manufacturing company outsources logistics to external partners and needs to:
 2. Create RLS role: `CARRIER-FEDEX`
 3. Add filter expression (DAX):
    ```dax
-   [carrier_id] = 'CARRIER-FEDEX-GROUP'
+   [carrier_id] = "CARRIER-FEDEX-GROUP"
    ```
 4. Apply to tables: `gold_shipments_in_transit`, `gold_sla_performance`
 5. Assign Service Principal to role

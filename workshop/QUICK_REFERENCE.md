@@ -138,7 +138,7 @@ TableName
 3. Click **+ New role** (e.g., `CARRIER-FEDEX`)
 4. Add filter predicate using DAX:
    ```dax
-   [carrier_id] = 'CARRIER-FEDEX-GROUP'
+   [carrier_id] = "CARRIER-FEDEX-GROUP"
    ```
 5. Assign Service Principal to role
 

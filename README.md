@@ -246,7 +246,7 @@ python main.py --count 100  # Generate 100 IDocs
 - **Table**: gold_shipments_in_transit  
 - **Filter Expression (DAX)**:
 ```dax
-[carrier_id] = 'CARRIER-FEDEX-GROUP'
+[carrier_id] = "CARRIER-FEDEX-GROUP"
 ```
 
 **Key Benefits of OneLake Security:**
