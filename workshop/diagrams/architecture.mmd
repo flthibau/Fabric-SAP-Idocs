@@ -10,17 +10,17 @@ graph TB
     end
     
     subgraph "Storage & Processing Layer"
-        subgraph "Real-Time Analytics"
-            KQL["KQL Database<br/>Eventhouse<br/>Sub-second queries"]
+        subgraph "Eventhouse - Real-Time Processing"
+            BRONZE_EH["Bronze Layer<br/>Raw IDocs<br/>KQL Table"]
+            SILVER_EH["Silver Layer<br/>Cleansed Data<br/>KQL Update Policies"]
         end
         
-        subgraph "Medallion Architecture"
-            BRONZE["Bronze Layer<br/>Raw IDocs<br/>Delta Lake"]
-            SILVER["Silver Layer<br/>Cleansed Data<br/>Normalized"]
-            GOLD["Gold Layer<br/>Business Dimensions<br/>Star Schema"]
+        subgraph "Lakehouse - Analytics Storage"
+            BRONZE_LH["Bronze Mirror<br/>Delta Table"]
+            SILVER_LH["Silver Mirror<br/>Delta Table"]
+            GOLD["Gold Layer<br/>Materialized Lake Views<br/>Star Schema"]
         end
         
-        LH["Lakehouse<br/>Data Lake Storage"]
         WH["SQL Warehouse<br/>Analytics Engine"]
     end
     
@@ -46,15 +46,17 @@ graph TB
     SIM -->|JSON/XML| EH
     EH -->|Stream| ES
     
-    ES -->|Real-time| KQL
-    ES -->|Batch| LH
+    ES -->|Ingest| BRONZE_EH
+    BRONZE_EH -->|KQL Update Policy| SILVER_EH
     
-    LH --> BRONZE
-    BRONZE --> SILVER
-    SILVER --> GOLD
+    BRONZE_EH -.->|Auto Mirror| BRONZE_LH
+    SILVER_EH -.->|Auto Mirror| SILVER_LH
+    
+    SILVER_LH -->|Materialized View| GOLD
     GOLD --> WH
     
-    KQL --> PBI
+    BRONZE_EH --> PBI
+    SILVER_EH --> PBI
     WH --> GQL
     GQL --> APIM
     
@@ -63,7 +65,8 @@ graph TB
     APIM --> MOBILE
     
     %% Governance
-    PV -.->|Catalog| LH
+    PV -.->|Catalog| BRONZE_EH
+    PV -.->|Catalog| SILVER_EH
     PV -.->|Quality| WH
     RLS -.->|Security| WH
     RLS -.->|Security| GQL
@@ -71,14 +74,16 @@ graph TB
     %% Styling
     classDef sourceStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px
     classDef ingestionStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef storageStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef eventhouseStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef lakehouseStyle fill:#e8eaf6,stroke:#283593,stroke-width:2px
     classDef consumptionStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
     classDef governanceStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
     classDef consumerStyle fill:#f1f8e9,stroke:#33691e,stroke-width:2px
     
     class SAP,SIM sourceStyle
     class EH,ES ingestionStyle
-    class KQL,BRONZE,SILVER,GOLD,LH,WH storageStyle
+    class BRONZE_EH,SILVER_EH eventhouseStyle
+    class BRONZE_LH,SILVER_LH,GOLD,WH lakehouseStyle
     class GQL,APIM,PBI consumptionStyle
     class PV,RLS governanceStyle
     class WEBAPP,PARTNERS,MOBILE consumerStyle

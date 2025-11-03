@@ -149,52 +149,61 @@ idoc_raw
 - Built-in time-series analytics
 - Automatic data compression
 
-#### 3B. Medallion Architecture (Lakehouse & Warehouse)
+#### 3B. Medallion Architecture (Eventhouse & Lakehouse)
 
 **What It Does:**  
-Implements a **layered data transformation** approach for high-quality, analytics-ready data.
+Implements a **layered data transformation** approach for high-quality, analytics-ready data, leveraging Eventhouse for real-time processing and Lakehouse for analytics.
 
 **The Three Layers:**
 
-**Bronze Layer (Raw Data)**
-- **Purpose**: Store exact copy of ingested data
-- **Format**: Delta Lake (optimized Parquet with transaction log)
+**Bronze Layer (Raw Data in Eventhouse)**
+- **Purpose**: Store exact copy of ingested IDoc data
+- **Location**: Eventhouse KQL Database
+- **Format**: KQL table with dynamic columns for flexibility
 - **Retention**: 90 days
-- **Structure**: Minimal - just add metadata like ingestion timestamp
-- **Example Table**: `bronze_idocs`
+- **Structure**: Minimal transformation - raw IDoc JSON with metadata
+- **Example Table**: `bronze_idocs` in Eventhouse
+- **Mirroring**: Automatically mirrored to Lakehouse as Delta tables
 
-**Silver Layer (Cleansed & Normalized)**
-- **Purpose**: Clean, validate, and structure the data
+**Silver Layer (Cleansed & Normalized in Eventhouse)**
+- **Purpose**: Clean, validate, and structure the data in real-time
+- **Location**: Eventhouse KQL Database
+- **Transformation Method**: KQL update policies that automatically process Bronze layer data
 - **Transformations Applied**:
-  - Parse JSON payloads into columns
+  - Parse JSON payloads into typed columns using KQL
   - Remove duplicates
-  - Fix data types
-  - Validate business rules
-  - Join with reference data
-- **Example Tables**: `silver_shipments`, `silver_deliveries`
+  - Validate data types and business rules
+  - Enrich with reference data
+- **Example Tables**: `silver_shipments`, `silver_deliveries` in Eventhouse
+- **Mirroring**: Automatically mirrored to Lakehouse as Delta tables
 
-**Gold Layer (Business-Ready)**
+**Gold Layer (Business-Ready in Lakehouse)**
 - **Purpose**: Create analytics-optimized dimensional model
+- **Location**: Lakehouse (not in Eventhouse)
+- **Format**: Delta tables
+- **Creation Method**: Materialized lake views that query the mirrored Silver layer Delta tables
 - **Structure**: Star schema with dimensions and facts
 - **Example Tables**:
   - **Dimensions**: `dim_customer`, `dim_location`, `dim_carrier`
   - **Facts**: `fact_shipment`, `fact_delivery`
 
 **Why This Pattern?**
-- ✅ **Data Quality**: Each layer improves data quality
-- ✅ **Flexibility**: Can always go back to raw data if needed
-- ✅ **Performance**: Gold layer optimized for fast queries
-- ✅ **Auditability**: Full lineage from source to consumption
+- ✅ **Real-Time Processing**: KQL update policies enable near-instant transformations in Eventhouse
+- ✅ **Data Quality**: Each layer improves data quality automatically
+- ✅ **Flexibility**: Bronze layer preserves raw data; can always reprocess
+- ✅ **Performance**: Gold layer optimized for analytics queries
+- ✅ **Unified Storage**: OneLake provides seamless integration between Eventhouse and Lakehouse
 
-**Lakehouse vs. Warehouse:**
+**Eventhouse vs. Lakehouse:**
 
-| Aspect | Lakehouse | Warehouse |
+| Aspect | Eventhouse | Lakehouse |
 |--------|-----------|-----------|
-| **Purpose** | Data engineering & storage | Analytics & querying |
-| **Format** | Delta Lake (files) | SQL tables |
-| **Query Engine** | Spark, SQL, KQL | SQL only |
-| **Performance** | Optimized for transformations | Optimized for analytics |
-| **Use Case** | Building Bronze/Silver/Gold | Serving data to APIs/BI |
+| **Purpose** | Real-time ingestion & processing | Analytics & long-term storage |
+| **Format** | KQL tables | Delta Lake (files) |
+| **Query Engine** | KQL only | Spark, SQL, KQL |
+| **Transformations** | KQL update policies | Materialized lake views |
+| **Latency** | Sub-second (real-time) | Minutes (batch refresh) |
+| **Use Case** | Bronze/Silver layers, real-time analytics | Gold layer, historical analytics |
 
 ### 4. Consumption Layer
 
@@ -319,17 +328,17 @@ graph TB
     end
     
     subgraph "Storage & Processing Layer"
-        subgraph "Real-Time Analytics"
-            KQL["KQL Database<br/>Eventhouse<br/>Sub-second queries"]
+        subgraph "Eventhouse - Real-Time Processing"
+            BRONZE_EH["Bronze Layer<br/>Raw IDocs<br/>KQL Table"]
+            SILVER_EH["Silver Layer<br/>Cleansed Data<br/>KQL Update Policies"]
         end
         
-        subgraph "Medallion Architecture"
-            BRONZE["Bronze Layer<br/>Raw IDocs<br/>Delta Lake"]
-            SILVER["Silver Layer<br/>Cleansed Data<br/>Normalized"]
-            GOLD["Gold Layer<br/>Business Dimensions<br/>Star Schema"]
+        subgraph "Lakehouse - Analytics Storage"
+            BRONZE_LH["Bronze Mirror<br/>Delta Table"]
+            SILVER_LH["Silver Mirror<br/>Delta Table"]
+            GOLD["Gold Layer<br/>Materialized Lake Views<br/>Star Schema"]
         end
         
-        LH["Lakehouse<br/>Data Lake Storage"]
         WH["SQL Warehouse<br/>Analytics Engine"]
     end
     
@@ -355,15 +364,17 @@ graph TB
     SIM -->|JSON/XML| EH
     EH -->|Stream| ES
     
-    ES -->|Real-time| KQL
-    ES -->|Batch| LH
+    ES -->|Ingest| BRONZE_EH
+    BRONZE_EH -->|KQL Update Policy| SILVER_EH
     
-    LH --> BRONZE
-    BRONZE --> SILVER
-    SILVER --> GOLD
+    BRONZE_EH -.->|Auto Mirror| BRONZE_LH
+    SILVER_EH -.->|Auto Mirror| SILVER_LH
+    
+    SILVER_LH -->|Materialized View| GOLD
     GOLD --> WH
     
-    KQL --> PBI
+    BRONZE_EH --> PBI
+    SILVER_EH --> PBI
     WH --> GQL
     GQL --> APIM
     
@@ -372,7 +383,8 @@ graph TB
     APIM --> MOBILE
     
     %% Governance
-    PV -.->|Catalog| LH
+    PV -.->|Catalog| BRONZE_EH
+    PV -.->|Catalog| SILVER_EH
     PV -.->|Quality| WH
     RLS -.->|Security| WH
     RLS -.->|Security| GQL
@@ -404,50 +416,46 @@ Event Hubs → Fabric Eventstream
 - Routing: Send to KQL Database + Lakehouse
 ```
 
-**Step 4: Real-Time Analytics Path**
+**Step 4: Real-Time Ingestion to Eventhouse Bronze**
 ```
 Time: 00:00:03
-Eventstream → KQL Database (idoc_raw table)
-Available for real-time queries immediately
+Eventstream → Eventhouse KQL Database (bronze_idocs table)
+- Data ingested into Bronze layer in Eventhouse
+- Available for real-time queries immediately
+- Automatically mirrored to Lakehouse as Delta table
 ```
 
-**Step 5: Batch Processing Path**
+**Step 5: Real-Time Transformation to Silver (KQL Update Policy)**
 ```
-Time: 00:05:00 (every 5 minutes)
-Eventstream → Lakehouse Bronze Layer
-- Store in Delta Lake format
-- Partition by date and IDoc type
-```
-
-**Step 6: Bronze to Silver Transformation**
-```
-Time: 00:10:00 (Spark job runs)
-Bronze Layer → Spark Transformation → Silver Layer
-- Parse JSON payload
+Time: 00:00:04 (triggered automatically by Bronze ingestion)
+Bronze Layer (Eventhouse) → KQL Update Policy → Silver Layer (Eventhouse)
+- Parse JSON payload using KQL functions
 - Extract shipment_id, tracking_number, customer_id
-- Validate data quality
+- Validate data quality with KQL rules
 - Remove duplicates
-- Write to silver_shipments table
+- Write to silver_shipments table in Eventhouse
+- Automatically mirrored to Lakehouse as Delta table
 ```
 
-**Step 7: Silver to Gold Transformation**
+**Step 6: Gold Layer Creation (Materialized Lake View)**
 ```
-Time: 00:15:00 (Spark job runs)
-Silver Layer → Spark Transformation → Gold Layer
+Time: 00:05:00 (materialized view refresh)
+Silver Layer (Lakehouse Delta) → Materialized Lake View → Gold Layer (Lakehouse)
+- Query mirrored Silver Delta tables in Lakehouse
 - Join with dim_customer, dim_location, dim_carrier
 - Create fact_shipment record
 - Calculate metrics (on_time_delivery_flag, delay_days)
-- Write to Warehouse
+- Materialize as Gold layer Delta tables in Lakehouse
 ```
 
-**Step 8: API Exposure**
+**Step 7: API Exposure**
 ```
-Time: 00:15:01
-Gold Layer in Warehouse → GraphQL API queries it
+Time: 00:05:01
+Gold Layer in Lakehouse → SQL Warehouse → GraphQL API queries it
 User makes GraphQL request → API returns shipment data
 ```
 
-**Step 9: Security Enforcement**
+**Step 8: Security Enforcement**
 ```
 At query time:
 User identity: "sp-partner-fedex"
@@ -455,7 +463,7 @@ RLS Policy: WHERE carrier = 'FedEx'
 Result: Only FedEx shipments returned
 ```
 
-**Step 10: Consumption**
+**Step 9: Consumption**
 ```
 Final result delivered to:
 - Mobile app (JSON response)
@@ -469,12 +477,11 @@ Final result delivered to:
 |-------|---------|------------|
 | Simulator → Event Hub | < 1 second | 1s |
 | Event Hub → Eventstream | < 1 second | 2s |
-| Eventstream → KQL Database | < 1 second | 3s |
-| Eventstream → Lakehouse (Bronze) | 5 minutes (batch) | 5m |
-| Bronze → Silver | 5 minutes | 10m |
-| Silver → Gold | 5 minutes | 15m |
-| **Real-Time Path (KQL)** | **~3 seconds** | ✅ **Real-time** |
-| **Analytics Path (Warehouse)** | **~15 minutes** | ✅ **Near real-time** |
+| Eventstream → Eventhouse Bronze | < 1 second | 3s |
+| Bronze → Silver (KQL update policy) | < 1 second | 4s |
+| Silver → Gold (Materialized view) | 1-5 minutes (refresh) | 5m |
+| **Real-Time Path (Eventhouse Bronze/Silver)** | **~4 seconds** | ✅ **Real-time** |
+| **Analytics Path (Lakehouse Gold)** | **~5 minutes** | ✅ **Near real-time** |
 
 ---
 
@@ -495,9 +502,9 @@ Final result delivered to:
 | Component | Purpose | Workshop Module |
 |-----------|---------|-----------------|
 | **Eventstream** | Real-time data routing | Module 2 |
-| **Eventhouse (KQL Database)** | Real-time analytics | Module 3 |
-| **Lakehouse** | Delta Lake storage | Module 4 |
-| **Data Engineering (Spark)** | Data transformations | Module 4 |
+| **Eventhouse (KQL Database)** | Real-time analytics & Bronze/Silver layers | Module 3 |
+| **Lakehouse** | Delta Lake storage & Gold layer | Module 4 |
+| **Materialized Lake Views** | Gold layer transformations | Module 4 |
 | **SQL Warehouse** | Analytics engine | Module 4 |
 | **OneLake Security** | Row-level security | Module 5 |
 
@@ -516,10 +523,9 @@ Final result delivered to:
 
 | Technology | Used For | Learn In Module |
 |------------|----------|-----------------|
-| **Delta Lake** | Storage format | Module 4 |
-| **KQL (Kusto Query Language)** | Real-time queries | Module 3 |
-| **SQL** | Warehouse queries | Module 4 |
-| **PySpark** | Data transformations | Module 4 |
+| **Delta Lake** | Storage format (Lakehouse) | Module 4 |
+| **KQL (Kusto Query Language)** | Real-time queries & update policies | Module 3 |
+| **SQL** | Warehouse queries & materialized views | Module 4 |
 | **GraphQL** | API queries | Module 6 |
 | **JSON** | IDoc message format | Module 2 |
 
@@ -595,33 +601,62 @@ event_hub_name = "sap-idocs"
 - Destination table name
 - Partition columns
 
-### 5. Spark Transformations (Bronze → Silver → Gold)
+### 5. KQL Update Policies (Bronze → Silver in Eventhouse)
 
-**Integration Pattern**: Batch ETL/ELT
+**Integration Pattern**: Real-time Stream Processing
 
 **How It Works:**
-- Scheduled Spark notebooks run transformations
-- Read from source layer (Delta Lake)
-- Apply business logic
-- Write to target layer (Delta Lake or Warehouse)
+- KQL update policies automatically trigger when new data arrives in Bronze layer
+- Transform data using KQL functions
+- Write to Silver layer tables in Eventhouse
+- All transformations happen in real-time (sub-second latency)
 
 **Key Patterns:**
-```python
-# Read from Bronze
-bronze_df = spark.read.table("bronze_idocs")
-
-# Transform
-silver_df = bronze_df.transform(parse_idoc) \
-                     .transform(validate_quality) \
-                     .transform(remove_duplicates)
-
-# Write to Silver
-silver_df.write.format("delta") \
-         .mode("append") \
-         .saveAsTable("silver_shipments")
+```kql
+// Create update policy on Silver table
+.alter table silver_shipments policy update 
+@'[{"IsEnabled": true, "Source": "bronze_idocs", "Query": "bronze_idocs | where idoc_type == \'SHPMNT\' | extend shipment_id = tostring(data.shipment_id), tracking_number = tostring(data.tracking_number), customer_id = tostring(data.customer_id) | project shipment_id, tracking_number, customer_id, timestamp", "IsTransactional": false, "PropagateIngestionProperties": false}]'
 ```
 
-### 6. Warehouse to GraphQL API
+### 6. Eventhouse to Lakehouse (Mirroring)
+
+**Integration Pattern**: Automatic Data Mirroring
+
+**How It Works:**
+- Eventhouse Bronze and Silver tables automatically mirror to Lakehouse
+- Mirrored data appears as Delta tables in Lakehouse
+- No configuration needed - happens automatically via OneLake
+- Real-time sync with minimal latency
+
+### 7. Materialized Lake Views (Silver → Gold in Lakehouse)
+
+**Integration Pattern**: Incremental Materialization
+
+**How It Works:**
+- Materialized lake views query the mirrored Silver Delta tables
+- Apply business logic to create dimensional model
+- Incrementally refresh based on schedule or triggers
+- Output is Gold layer Delta tables
+
+**Example:**
+```sql
+-- Create materialized view for Gold layer
+CREATE MATERIALIZED VIEW gold.fact_shipment
+AS
+SELECT 
+    s.shipment_id,
+    c.customer_key,
+    l_origin.location_key AS origin_location_key,
+    l_dest.location_key AS destination_location_key,
+    s.total_weight,
+    s.total_volume
+FROM silver_shipments s
+JOIN dim_customer c ON s.customer_id = c.customer_id
+JOIN dim_location l_origin ON s.origin_location = l_origin.location_id
+JOIN dim_location l_dest ON s.destination_location = l_dest.location_id
+```
+
+### 8. Lakehouse to GraphQL API
 
 **Integration Pattern**: API over SQL
 
@@ -634,7 +669,7 @@ silver_df.write.format("delta") \
 - Service Principal with Fabric workspace permissions
 - OAuth2 token-based authentication
 
-### 7. GraphQL API to APIM
+### 9. GraphQL API to APIM
 
 **Integration Pattern**: API Gateway
 
@@ -648,7 +683,7 @@ silver_df.write.format("delta") \
 - OAuth2 authorization server
 - API policies (XML)
 
-### 8. Purview Integration
+### 10. Purview Integration
 
 **Integration Pattern**: Metadata Harvesting
 
