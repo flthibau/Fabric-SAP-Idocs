@@ -336,9 +336,10 @@ $token = $response.access_token
 
 ### Medallion Architecture
 
-- **Bronze**: Raw data as ingested (immutable)
-- **Silver**: Cleansed, normalized data
-- **Gold**: Business-ready aggregations and dimensions
+- **Bronze**: Raw IDoc data ingested into Eventhouse (KQL tables)
+- **Silver**: Cleansed, normalized data in Eventhouse (via KQL update policies)
+- **Gold**: Business-ready aggregations and dimensions in Lakehouse (via materialized lake views)
+- **Mirroring**: Bronze and Silver auto-mirror from Eventhouse to Lakehouse as Delta tables
 
 ### Event Hub Concepts
 
