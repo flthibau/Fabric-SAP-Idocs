@@ -12,7 +12,7 @@
 This repository contains a **production-ready reference implementation** demonstrating how to build a modern data product on Microsoft Fabric with:
 
 ✅ **Real-Time Data Product** with Fabric Real-Time Intelligence (Eventhouse)  
-✅ **OneLake Security** - Centralized Row-Level Security across all 6 Fabric engines  
+✅ **Row-Level Security (RLS)** - SQL engine-based security for partner data isolation  
 ✅ **Microsoft Purview Unified Catalog** - Complete data governance and quality monitoring  
 ✅ **GraphQL API** via Azure API Management with OAuth2 authentication  
 ✅ **Live Demo Application** - Visual interface showing partner-specific data filtering  
@@ -55,7 +55,7 @@ A manufacturing company outsources logistics to external partners (carriers, war
 ### The Solution
 **Real-Time Data Product** powered by:
 - 🔥 **Microsoft Fabric Real-Time Intelligence** (Eventhouse) for sub-second streaming
-- 🔒 **OneLake Security** for centralized Row-Level Security across 6 engines
+- 🔒 **Row-Level Security (RLS)** in Fabric SQL engine for partner data isolation
 - 📊 **Microsoft Purview** for data governance and quality monitoring
 - 🌐 **GraphQL API** exposed through Azure API Management
 
@@ -100,13 +100,11 @@ Azure Event Hubs (idoc-events)
 ╚══════════════════════════════════════════════════════════╝
       ↓
 ╔══════════════════════════════════════════════════════════╗
-║  ONELAKE SECURITY LAYER (Centralized RLS)                ║
-║  ✓ Real-Time Intelligence (KQL)                          ║
-║  ✓ Data Engineering (Spark)                              ║
-║  ✓ Data Warehouse (SQL)                                  ║
-║  ✓ Power BI (Direct Lake)                                ║
-║  ✓ GraphQL API (THIS PROJECT)                            ║
-║  ✓ OneLake API                                           ║
+║  ROW-LEVEL SECURITY (SQL Engine RLS)                     ║
+║  ✓ Configured in Fabric SQL Analytics Endpoint           ║
+║  ✓ Applied to Lakehouse Gold tables                      ║
+║  ✓ Enforced via Service Principal authentication         ║
+║  ✓ Accessible through SQL, Power BI, GraphQL API         ║
 ╚══════════════════════════════════════════════════════════╝
       ↓
 Fabric GraphQL API (partner_logistics_api)
@@ -175,8 +173,8 @@ python main.py --count 100  # Generate 100 IDocs
 - **Eventstream**: Real-Time Intelligence ingestion configuration
 - **Eventhouse**: KQL databases for Bronze/Silver layers with update policies
 - **Lakehouse**: Mirrored Bronze/Silver tables and Gold layer materialized views
-- **Warehouse**: SQL schemas and Row-Level Security
-- **OneLake Security**: Row-Level Security configuration guides
+- **Warehouse**: SQL Analytics Endpoint with Row-Level Security configuration
+- **Security**: Row-Level Security (RLS) configuration guides for SQL engine
 
 **Key Files**:
 - `warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md` - Complete RLS setup
@@ -226,7 +224,7 @@ python main.py --count 100  # Generate 100 IDocs
 | **Transformation** | Fabric Data Engineering (Spark) | ETL pipelines |
 | **Analytics** | Fabric Data Warehouse (SQL) | TSQL queries |
 | **API** | Fabric GraphQL + Azure APIM | Data product exposure |
-| **Security** | OneLake Security + Azure AD | Centralized RLS |
+| **Security** | Fabric SQL RLS + Azure AD | Row-Level Security |
 | **Governance** | Microsoft Purview | Data catalog & quality |
 | **BI** | Power BI Direct Lake | Real-time dashboards |
 
@@ -234,34 +232,31 @@ python main.py --count 100  # Generate 100 IDocs
 
 ## 🔒 Security Architecture
 
-### OneLake Security: Single Point of Control
+### Row-Level Security (RLS) in Fabric SQL Engine
 
-**Storage-Layer Row-Level Security** enforced across **all 6 Fabric engines**:
+**SQL Engine Row-Level Security** configured in Fabric SQL Analytics Endpoint:
 
-```sql
--- Example RLS rule applied at OneLake storage layer
-CREATE FUNCTION dbo.PartnerSecurityPredicate(@partner_id NVARCHAR(50))
-RETURNS TABLE
-WITH SCHEMABINDING
-AS RETURN (
-    SELECT 1 AS AccessGranted
-    WHERE @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
-)
+Example RLS role configuration:
+- **Role**: CARRIER-FEDEX
+- **Table**: gold_shipments_in_transit  
+- **Filter Expression (DAX)**:
+```dax
+[carrier_id] = 'CARRIER-FEDEX-GROUP'
 ```
 
 **Benefits**:
-✅ **Centralized**: One RLS definition, enforced everywhere  
-✅ **Multi-Engine**: Works across KQL, Spark, SQL, Power BI, GraphQL, OneLake API  
-✅ **Identity-Aware**: Leverages Azure AD Service Principal claims  
-✅ **Impossible to Bypass**: Enforced at storage layer, not application layer
+✅ **Service Principal-Based**: Each partner has dedicated Azure AD identity  
+✅ **Role-Based Filtering**: RLS roles assigned to Service Principals  
+✅ **Multi-Table Support**: Consistent security across related datasets  
+✅ **Accessible via Multiple Interfaces**: SQL, Power BI, GraphQL API
 
 ### Authentication Flow
 
 1. **Partner Application** → Acquires OAuth2 token from Azure AD
 2. **Token Claims** → Include Service Principal ObjectId
-3. **APIM Gateway** → Validates token, extracts claims
-4. **GraphQL API** → Sets session context with partner identity
-5. **OneLake Security** → Filters data based on RLS rules
+3. **APIM Gateway** → Validates token, forwards request
+4. **GraphQL API** → Authenticates using Service Principal
+5. **SQL Analytics Endpoint** → Applies RLS filters based on Service Principal role
 6. **Partner Receives** → Only authorized data
 
 📄 **Complete Security Guide**: [`fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md`](./fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md)
@@ -388,14 +383,15 @@ cd api/scripts
 3. Create dimension tables for Gold layer
 4. Create fact tables using materialized lake views
 
-**OneLake Security**:
-```sql
--- Run in Fabric Warehouse
--- See fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md
-CREATE SECURITY POLICY PartnerAccessPolicy
-ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(partner_id)
-ON gold.orders, gold.shipments, gold.invoices
-WITH (STATE = ON);
+**Row-Level Security (RLS)**:
+```bash
+# Configure in Fabric Portal (SQL Analytics Endpoint)
+# Navigate to: Lakehouse → SQL analytics endpoint → Security → Manage security roles
+# See fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md for detailed steps
+
+1. Create RLS role (e.g., "CARRIER-FEDEX")
+2. Add filter expression: [carrier_id] = 'CARRIER-FEDEX-GROUP'
+3. Assign Service Principal to role
 ```
 
 #### 4️⃣ Deploy GraphQL API
@@ -509,7 +505,7 @@ idoc_shipments_gold
 - 📄 [`demo-app/QUICKSTART.md`](./demo-app/QUICKSTART.md) - Get demo running in 5 minutes
 - 📄 [`simulator/README.md`](./simulator/README.md) - IDoc simulator setup
 - 📄 [`fabric/GRAPHQL_DEPLOYMENT_GUIDE.md`](./fabric/GRAPHQL_DEPLOYMENT_GUIDE.md) - GraphQL API deployment
-- 📄 [`fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md`](./fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md) - OneLake Security setup
+- 📄 [`fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md`](./fabric/warehouse/security/ONELAKE_RLS_CONFIGURATION_GUIDE.md) - Row-Level Security setup
 
 ### API Reference
 - 📄 [`api/GRAPHQL_QUERIES_REFERENCE.md`](./api/GRAPHQL_QUERIES_REFERENCE.md) - GraphQL schema and examples
@@ -533,10 +529,10 @@ idoc_shipments_gold
 - **Streaming analytics** with KQL for operational insights
 - **Hot path** for live dashboards and alerting
 
-### 🔒 OneLake Security
-- **Single RLS definition** enforced across 6 Fabric engines
-- **Storage-layer security** impossible to bypass
-- **Identity-aware filtering** via Azure AD integration
+### 🔒 Row-Level Security
+- **SQL engine RLS** configured in Fabric SQL Analytics Endpoint
+- **Service Principal-based** authentication and authorization
+- **Identity-aware filtering** via Azure AD Service Principals
 
 ### 📊 Data Governance
 - **Purview Unified Catalog** for data product registration
@@ -598,7 +594,7 @@ This project is actively being developed with exciting new features planned!
 
 ### 🎯 Current Focus: Phase 1 - Security & Governance
 
-- 🔧 **OneLake Security RLS** - Debugging and optimization (In Progress)
+- 🔧 **Row-Level Security (RLS)** - Debugging and optimization (In Progress)
 - 📚 **Data Model Documentation** - Complete technical and business documentation (Planned)
 
 ### 🚀 Coming Soon
@@ -617,7 +613,7 @@ This project is actively being developed with exciting new features planned!
 - **v1.0.0** (October 2025)
   - ✅ Complete demo application with RLS
   - ✅ Real-Time Intelligence integration
-  - ✅ OneLake Security implementation
+  - ✅ Row-Level Security (RLS) implementation
   - ✅ Purview Unified Catalog integration
   - ✅ GraphQL API via APIM
   - ✅ SAP IDoc simulator
