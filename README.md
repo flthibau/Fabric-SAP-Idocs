@@ -232,30 +232,23 @@ python main.py --count 100  # Generate 100 IDocs
 
 ## 🔒 Security Architecture
 
-### Row-Level Security (RLS) with OneLake Security
+### Row-Level Security (RLS) in Fabric SQL Engine
 
-**OneLake Security** provides storage-layer Row-Level Security configured through the **Fabric Portal UI** (not SQL code). This ensures data isolation across all Fabric engines.
+**SQL Engine Row-Level Security** configured in Fabric SQL Analytics Endpoint:
 
-**Configuration Method:**
-1. Navigate to: Lakehouse → SQL Analytics Endpoint → Security → Manage security roles
-2. Create RLS roles with DAX filter expressions
-3. Assign Service Principals to roles
-
-**Example RLS role configuration:**
+Example RLS role configuration:
 - **Role**: CARRIER-FEDEX
 - **Table**: gold_shipments_in_transit  
 - **Filter Expression (DAX)**:
 ```dax
-[carrier_id] = "CARRIER-FEDEX-GROUP"
+[carrier_id] = 'CARRIER-FEDEX-GROUP'
 ```
 
-**Key Benefits of OneLake Security:**
+**Benefits**:
 ✅ **Service Principal-Based**: Each partner has dedicated Azure AD identity  
 ✅ **Role-Based Filtering**: RLS roles assigned to Service Principals  
 ✅ **Multi-Table Support**: Consistent security across related datasets  
-✅ **Multi-Engine Coverage**: Works across KQL, Spark, SQL, Power BI, GraphQL automatically
-✅ **UI-Based Configuration**: No SQL code needed - configured through Fabric Portal
-✅ **Storage-Layer Enforcement**: Minimal query performance overhead
+✅ **Accessible via Multiple Interfaces**: SQL, Power BI, GraphQL API
 
 ### Authentication Flow
 

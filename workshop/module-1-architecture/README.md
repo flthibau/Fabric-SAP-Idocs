@@ -389,24 +389,26 @@ A manufacturing company outsources logistics to external partners and needs to:
 
 #### Security Model
 
-**OneLake Security with Row-Level Security (RLS)** ensures each partner sees only authorized data. This is configured through the **Fabric Portal UI** using DAX filter expressions, not SQL code.
+**Row-Level Security (RLS)** ensures each partner sees only authorized data:
 
-**Example RLS Configuration (via Fabric Portal):**
+```sql
+-- Example RLS Rule
+CREATE FUNCTION dbo.PartnerSecurityPredicate(@partner_id NVARCHAR(50))
+RETURNS TABLE
+WITH SCHEMABINDING
+AS RETURN (
+    SELECT 1 AS AccessGranted
+    WHERE @partner_id = CAST(SESSION_CONTEXT(N'PartnerID') AS NVARCHAR(50))
+)
 
-1. Navigate to: Lakehouse → SQL Analytics Endpoint → Security → Manage security roles
-2. Create RLS role: `CARRIER-FEDEX`
-3. Add filter expression (DAX):
-   ```dax
-   [carrier_id] = "CARRIER-FEDEX-GROUP"
-   ```
-4. Apply to tables: `gold_shipments_in_transit`, `gold_sla_performance`
-5. Assign Service Principal to role
-
-**Key Benefits of OneLake Security:**
-- ✅ Single definition at storage layer
-- ✅ Works across all Fabric engines (KQL, Spark, SQL, Power BI, GraphQL)
-- ✅ Service Principal-based access control
-- ✅ No query performance overhead
+-- Apply to tables
+CREATE SECURITY POLICY PartnerAccessPolicy
+ADD FILTER PREDICATE dbo.PartnerSecurityPredicate(partner_id)
+ON gold.shipments,
+   gold.orders,
+   gold.invoices
+WITH (STATE = ON);
+```
 
 **Result**: FedEx queries only return FedEx shipments, ACME only sees ACME orders, etc.
 
