@@ -1,0 +1,667 @@
+{
+  "info": {
+    "name": "3PL Partner APIs - Complete Test Collection",
+    "description": "Complete Postman collection for testing Microsoft Fabric GraphQL APIs for 3PL data product.\n\nSetup Instructions:\n1. Import this collection into Postman\n2. Create an environment with these variables:\n   - base_url: https://apim-3pl-flt.azure-api.net\n   - tenant_id: 38de1b20-8309-40ba-9584-5d9fcb7203b4\n   - fedex_app_id: 94a9edcc-7a22-4d89-b001-799e8414711a\n   - warehouse_app_id: 1de3dcee-f7eb-4701-8cd9-ed65f3792fe0\n   - acme_app_id: a3e88682-8bef-4712-9cc5-031d109cefca\n   - token: (obtained via Azure CLI)\n\n3. Get token using Azure CLI:\n   az login --service-principal -u {{fedex_app_id}} -p <SECRET> --tenant {{tenant_id}}\n   TOKEN=$(az account get-access-token --resource 'https://analysis.windows.net/powerbi/api' --query accessToken -o tsv)\n\n4. Paste token into Postman environment variable 'token'\n\nNote: Postman cannot directly authenticate Azure Service Principals. Use Azure CLI or PowerShell.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://apim-3pl-flt.azure-api.net",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Shipments API",
+      "item": [
+        {
+          "name": "Get Recent Shipments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "});",
+                  "",
+                  "pm.test(\"Shipments array exists\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.gold_shipments_in_transits).to.have.property('items');",
+                  "});",
+                  "",
+                  "pm.test(\"No GraphQL errors\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.not.have.property('errors');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetRecentShipments { gold_shipments_in_transits(first: 10) { items { shipment_number carrier_id customer_name origin destination status estimated_delivery_date } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments",
+              "host": ["{{base_url}}"],
+              "path": ["shipments"]
+            },
+            "description": "Get 10 most recent shipments with basic information"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shipments by Carrier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Filtered by carrier\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var items = jsonData.data.gold_shipments_in_transits.items;",
+                  "    if (items.length > 0) {",
+                  "        pm.expect(items[0].carrier_id).to.include('CARRIER');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetFedExShipments { gold_shipments_in_transits(first: 50, filter: { carrier_id: { eq: \\\"CARRIER-FEDEX-GROU\\\" } }) { items { shipment_number carrier_id status estimated_delivery_date } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments",
+              "host": ["{{base_url}}"],
+              "path": ["shipments"]
+            },
+            "description": "Get shipments filtered by FedEx carrier"
+          },
+          "response": []
+        },
+        {
+          "name": "Get In-Transit Shipments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetInTransitShipments { gold_shipments_in_transits(first: 100, filter: { status: { eq: \\\"IN_TRANSIT\\\" } }) { items { shipment_number carrier_id customer_name origin destination estimated_delivery_date } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments",
+              "host": ["{{base_url}}"],
+              "path": ["shipments"]
+            },
+            "description": "Get all shipments currently in transit"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shipments with Pagination",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetShipmentsWithPagination { gold_shipments_in_transits(first: 50) { items { shipment_number carrier_id } pageInfo { hasNextPage endCursor } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments",
+              "host": ["{{base_url}}"],
+              "path": ["shipments"]
+            },
+            "description": "Get shipments with pagination support. Use endCursor from response for next page."
+          },
+          "response": []
+        }
+      ],
+      "description": "Shipments API endpoints for carrier and customer tracking"
+    },
+    {
+      "name": "2. Orders API",
+      "item": [
+        {
+          "name": "Get Daily Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Orders data exists\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.gold_orders_daily_summaries).to.have.property('items');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetDailyOrders { gold_orders_daily_summaries(first: 30) { items { order_date total_orders total_revenue avg_order_value } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Get daily order summaries with key metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders by Date Range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetOrdersByDateRange { gold_orders_daily_summaries(first: 90, filter: { order_date: { ge: \\\"2025-01-01\\\", le: \\\"2025-03-31\\\" } }) { items { order_date total_orders total_revenue avg_order_value } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Get orders for Q1 2025 (January - March)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get High Revenue Days",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetHighRevenueDays { gold_orders_daily_summaries(first: 50, filter: { total_revenue: { gt: 10000 } }) { items { order_date total_orders total_revenue avg_order_value } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Get days with revenue exceeding $10,000"
+          },
+          "response": []
+        }
+      ],
+      "description": "Orders API endpoints for customer order metrics"
+    },
+    {
+      "name": "3. Warehouse Productivity API",
+      "item": [
+        {
+          "name": "Get Warehouse Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Warehouse data exists\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.gold_warehouse_productivity_dailies).to.have.property('items');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetWarehouseMetrics { gold_warehouse_productivity_dailies(first: 10) { items { warehouse_id productivity_date total_shipments avg_processing_time fulfillment_rate } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/warehouse-productivity",
+              "host": ["{{base_url}}"],
+              "path": ["warehouse-productivity"]
+            },
+            "description": "Get warehouse productivity metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Warehouse by Partner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetWarehouseByPartner { gold_warehouse_productivity_dailies(first: 50, filter: { warehouse_partner_id: { eq: \\\"PARTNER-WH003\\\" } }) { items { warehouse_id productivity_date total_shipments avg_processing_time fulfillment_rate } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/warehouse-productivity",
+              "host": ["{{base_url}}"],
+              "path": ["warehouse-productivity"]
+            },
+            "description": "Get metrics for specific warehouse partner"
+          },
+          "response": []
+        },
+        {
+          "name": "Get High Performance Warehouses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetHighPerformance { gold_warehouse_productivity_dailies(first: 50, filter: { fulfillment_rate: { gt: 95 } }) { items { warehouse_id productivity_date fulfillment_rate total_shipments } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/warehouse-productivity",
+              "host": ["{{base_url}}"],
+              "path": ["warehouse-productivity"]
+            },
+            "description": "Get warehouses with fulfillment rate > 95%"
+          },
+          "response": []
+        }
+      ],
+      "description": "Warehouse productivity API endpoints"
+    },
+    {
+      "name": "4. SLA Performance API",
+      "item": [
+        {
+          "name": "Get SLA Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"SLA data exists\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.gold_sla_performances).to.have.property('items');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetSLAMetrics { gold_sla_performances(first: 10) { items { carrier_id ontime_shipments late_shipments ontime_percentage } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sla-performance",
+              "host": ["{{base_url}}"],
+              "path": ["sla-performance"]
+            },
+            "description": "Get carrier SLA performance metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get SLA by Carrier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetFedExSLA { gold_sla_performances(first: 20, filter: { carrier_id: { eq: \\\"CARRIER-FEDEX-GROU\\\" } }) { items { carrier_id ontime_shipments late_shipments ontime_percentage } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sla-performance",
+              "host": ["{{base_url}}"],
+              "path": ["sla-performance"]
+            },
+            "description": "Get SLA metrics for FedEx carrier"
+          },
+          "response": []
+        },
+        {
+          "name": "Get High Performance Carriers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetHighPerformanceCarriers { gold_sla_performances(first: 50, filter: { ontime_percentage: { gt: 90 } }) { items { carrier_id ontime_percentage total_shipments } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sla-performance",
+              "host": ["{{base_url}}"],
+              "path": ["sla-performance"]
+            },
+            "description": "Get carriers with on-time rate > 90%"
+          },
+          "response": []
+        }
+      ],
+      "description": "SLA performance API endpoints for carrier metrics"
+    },
+    {
+      "name": "5. Revenue Recognition API",
+      "item": [
+        {
+          "name": "Get Revenue Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Revenue data exists\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.gold_revenue_recognition_realtimes).to.have.property('items');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetRevenueMetrics { gold_revenue_recognition_realtimes(first: 10) { items { event_date total_revenue recognized_revenue pending_revenue } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/revenue",
+              "host": ["{{base_url}}"],
+              "path": ["revenue"]
+            },
+            "description": "Get revenue recognition metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Revenue by Date Range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetRevenueByDateRange { gold_revenue_recognition_realtimes(first: 60, filter: { event_date: { ge: \\\"2025-01-01\\\", le: \\\"2025-03-31\\\" } }) { items { event_date total_revenue recognized_revenue pending_revenue recognition_percentage } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/revenue",
+              "host": ["{{base_url}}"],
+              "path": ["revenue"]
+            },
+            "description": "Get revenue for Q1 2025"
+          },
+          "response": []
+        }
+      ],
+      "description": "Revenue recognition API endpoints"
+    },
+    {
+      "name": "6. GraphQL Passthrough",
+      "item": [
+        {
+          "name": "Generic GraphQL Query",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { gold_shipments_in_transits(first: 5) { items { shipment_number carrier_id } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Generic GraphQL endpoint - can query any table"
+          },
+          "response": []
+        },
+        {
+          "name": "Multi-Entity Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetDashboardData { shipments: gold_shipments_in_transits(first: 5) { items { shipment_number status } } orders: gold_orders_daily_summaries(first: 5) { items { order_date total_revenue } } sla: gold_sla_performances(first: 3) { items { carrier_id ontime_percentage } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Query multiple entity types in one request"
+          },
+          "response": []
+        }
+      ],
+      "description": "Generic GraphQL endpoint for flexible queries"
+    },
+    {
+      "name": "7. Advanced Queries",
+      "item": [
+        {
+          "name": "Complex Multi-Filter Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query ComplexFilter { gold_shipments_in_transits(first: 100, filter: { and: [ { or: [ { carrier_id: { eq: \\\"CARRIER-FEDEX-GROU\\\" } }, { carrier_id: { eq: \\\"CARRIER-UPS\\\" } } ] }, { status: { ne: \\\"CANCELLED\\\" } }, { ship_date: { ge: \\\"2025-01-01\\\" } } ] }) { items { shipment_number carrier_id status ship_date } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Complex query with AND, OR, and NOT logic"
+          },
+          "response": []
+        },
+        {
+          "name": "Query with String Contains",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query StringContains { gold_shipments_in_transits(first: 100, filter: { customer_name: { contains: \\\"ACME\\\" } }) { items { shipment_number customer_name carrier_id } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Filter using string contains operator"
+          },
+          "response": []
+        },
+        {
+          "name": "Sorted Results",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query SortedResults { gold_orders_daily_summaries(first: 20, orderBy: { total_revenue: DESC }) { items { order_date total_orders total_revenue } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Get results sorted by revenue (descending)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Advanced query patterns and filtering techniques"
+    }
+  ]
+}
