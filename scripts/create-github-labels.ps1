@@ -88,5 +88,5 @@ New-GitHubLabel -Name "status-testing" -Color "1d76db" -Description "In testing 
 Write-Host "`n⭐ Creating Special Labels..." -ForegroundColor Cyan
 New-GitHubLabel -Name "roadmap" -Color "0e8a16" -Description "Part of the roadmap"
 
-Write-Host "`n🎉 Label creation complete!" -ForegroundColor Green
-Write-Host "📊 View labels at: https://github.com/$Owner/$Repository/labels" -ForegroundColor Blue
+Write-Host "`n[COMPLETE] Label creation complete!" -ForegroundColor Green
+Write-Host "[LINK] View labels at: https://github.com/$Owner/$Repository/labels" -ForegroundColor Blue

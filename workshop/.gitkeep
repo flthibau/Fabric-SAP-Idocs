@@ -1,0 +1,16 @@
+# Workshop Directory
+
+This directory will contain all workshop materials created by the AI bot.
+
+Structure:
+- docs/ - Architecture and concept documentation
+- labs/ - Hands-on lab guides
+- samples/ - Sample code and data
+- scripts/ - Helper scripts
+- notebooks/ - Jupyter notebooks
+- queries/ - KQL queries
+- exercises/ - Practice exercises
+- diagrams/ - Architecture diagrams
+- postman/ - API collections
+- tests/ - Test scenarios
+- setup/ - Prerequisites and environment setup

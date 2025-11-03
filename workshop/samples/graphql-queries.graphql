@@ -1,0 +1,781 @@
+# ============================================================================
+# 3PL Partner GraphQL Queries - Sample Collection
+# ============================================================================
+# 
+# This file contains working GraphQL queries for the 3PL data product.
+# All queries are tested and validated against Microsoft Fabric GraphQL API.
+#
+# Usage:
+#   1. Copy query to your GraphQL client (Postman, Insomnia, etc.)
+#   2. Set Authorization header: Bearer <token>
+#   3. POST to: https://apim-3pl-flt.azure-api.net/graphql
+#
+# Note: Fabric automatically pluralizes table names!
+#   - gold_orders_daily_summary → gold_orders_daily_summaries
+#   - gold_warehouse_productivity_daily → gold_warehouse_productivity_dailies
+#
+# ============================================================================
+
+# ============================================================================
+# SHIPMENTS QUERIES
+# ============================================================================
+
+# Query 1: Basic Shipments - Get 10 most recent shipments
+query GetRecentShipments {
+  gold_shipments_in_transits(first: 10) {
+    items {
+      shipment_number
+      carrier_id
+      customer_name
+      origin
+      destination
+      status
+      estimated_delivery_date
+    }
+  }
+}
+
+# Query 2: All Shipment Fields - Complete data retrieval
+query GetAllShipmentFields {
+  gold_shipments_in_transits(first: 50) {
+    items {
+      shipment_number
+      carrier_id
+      customer_id
+      customer_name
+      origin
+      destination
+      status
+      ship_date
+      estimated_delivery_date
+      actual_delivery_date
+      partner_access_scope
+    }
+  }
+}
+
+# Query 3: Filtered Shipments - By carrier
+query GetFedExShipments {
+  gold_shipments_in_transits(
+    first: 50
+    filter: { carrier_id: { eq: "CARRIER-FEDEX-GROU" } }
+  ) {
+    items {
+      shipment_number
+      carrier_id
+      status
+      estimated_delivery_date
+    }
+  }
+}
+
+# Query 4: Shipments by Status - In Transit only
+query GetInTransitShipments {
+  gold_shipments_in_transits(
+    first: 100
+    filter: { status: { eq: "IN_TRANSIT" } }
+  ) {
+    items {
+      shipment_number
+      carrier_id
+      customer_name
+      origin
+      destination
+      estimated_delivery_date
+    }
+  }
+}
+
+# Query 5: Shipments with Multiple Filters - Carrier AND Status
+query GetFedExInTransit {
+  gold_shipments_in_transits(
+    first: 100
+    filter: {
+      and: [
+        { carrier_id: { eq: "CARRIER-FEDEX-GROU" } }
+        { status: { eq: "IN_TRANSIT" } }
+      ]
+    }
+  ) {
+    items {
+      shipment_number
+      carrier_id
+      status
+      estimated_delivery_date
+    }
+  }
+}
+
+# Query 6: Shipments with OR Logic - Multiple statuses
+query GetActiveShipments {
+  gold_shipments_in_transits(
+    first: 100
+    filter: {
+      or: [
+        { status: { eq: "IN_TRANSIT" } }
+        { status: { eq: "OUT_FOR_DELIVERY" } }
+      ]
+    }
+  ) {
+    items {
+      shipment_number
+      status
+      estimated_delivery_date
+    }
+  }
+}
+
+# Query 7: Shipments with Pagination
+query GetShipmentsPage1 {
+  gold_shipments_in_transits(first: 50) {
+    items {
+      shipment_number
+      carrier_id
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# Query 8: Get Next Page (use endCursor from previous query)
+query GetShipmentsPage2 {
+  gold_shipments_in_transits(
+    first: 50
+    after: "CURSOR_VALUE_HERE"
+  ) {
+    items {
+      shipment_number
+      carrier_id
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# ============================================================================
+# ORDERS QUERIES
+# ============================================================================
+
+# Query 9: Basic Orders - Daily summaries
+query GetDailyOrders {
+  gold_orders_daily_summaries(first: 30) {
+    items {
+      order_date
+      total_orders
+      total_revenue
+      avg_order_value
+    }
+  }
+}
+
+# Query 10: All Order Fields
+query GetCompleteOrderData {
+  gold_orders_daily_summaries(first: 100) {
+    items {
+      order_date
+      total_orders
+      total_lines
+      total_revenue
+      avg_order_value
+      partner_access_scope
+    }
+  }
+}
+
+# Query 11: Orders by Date Range
+query GetOrdersByDateRange {
+  gold_orders_daily_summaries(
+    first: 90
+    filter: {
+      order_date: {
+        ge: "2025-01-01"
+        le: "2025-03-31"
+      }
+    }
+  ) {
+    items {
+      order_date
+      total_orders
+      total_revenue
+      avg_order_value
+    }
+  }
+}
+
+# Query 12: Recent Orders - Last 30 days
+# Note: Update the date filter to current month
+query GetRecentOrders {
+  gold_orders_daily_summaries(
+    first: 30
+    filter: {
+      order_date: { ge: "2025-01-01" }  # Update to current year
+    }
+  ) {
+    items {
+      order_date
+      total_orders
+      total_revenue
+    }
+  }
+}
+
+# Query 13: High Revenue Days - Orders > $10,000
+query GetHighRevenueDays {
+  gold_orders_daily_summaries(
+    first: 50
+    filter: {
+      total_revenue: { gt: 10000 }
+    }
+  ) {
+    items {
+      order_date
+      total_orders
+      total_revenue
+      avg_order_value
+    }
+  }
+}
+
+# Query 14: Orders Sorted by Revenue (Descending)
+query GetTopRevenueDays {
+  gold_orders_daily_summaries(
+    first: 20
+    orderBy: { total_revenue: DESC }
+  ) {
+    items {
+      order_date
+      total_orders
+      total_revenue
+    }
+  }
+}
+
+# ============================================================================
+# WAREHOUSE PRODUCTIVITY QUERIES
+# ============================================================================
+
+# Query 15: Basic Warehouse Data
+query GetWarehouseMetrics {
+  gold_warehouse_productivity_dailies(first: 10) {
+    items {
+      warehouse_id
+      productivity_date
+      total_shipments
+      avg_processing_time
+      fulfillment_rate
+    }
+  }
+}
+
+# Query 16: All Warehouse Fields
+query GetCompleteWarehouseData {
+  gold_warehouse_productivity_dailies(first: 100) {
+    items {
+      warehouse_id
+      productivity_date
+      total_shipments
+      avg_processing_time
+      fulfillment_rate
+      warehouse_partner_id
+      warehouse_partner_name
+      partner_access_scope
+    }
+  }
+}
+
+# Query 17: Warehouse by Partner ID
+query GetWarehouseByPartner {
+  gold_warehouse_productivity_dailies(
+    first: 50
+    filter: { warehouse_partner_id: { eq: "PARTNER-WH003" } }
+  ) {
+    items {
+      warehouse_id
+      productivity_date
+      total_shipments
+      avg_processing_time
+      fulfillment_rate
+    }
+  }
+}
+
+# Query 18: High Performance Warehouses - Fulfillment > 95%
+query GetHighPerformanceWarehouses {
+  gold_warehouse_productivity_dailies(
+    first: 50
+    filter: {
+      fulfillment_rate: { gt: 95 }
+    }
+  ) {
+    items {
+      warehouse_id
+      productivity_date
+      fulfillment_rate
+      total_shipments
+    }
+  }
+}
+
+# Query 19: Warehouse by Date Range
+query GetWarehouseByDateRange {
+  gold_warehouse_productivity_dailies(
+    first: 60
+    filter: {
+      productivity_date: {
+        ge: "2025-01-01"
+        le: "2025-01-31"
+      }
+    }
+  ) {
+    items {
+      warehouse_id
+      productivity_date
+      total_shipments
+      avg_processing_time
+    }
+  }
+}
+
+# ============================================================================
+# SLA PERFORMANCE QUERIES
+# ============================================================================
+
+# Query 20: Basic SLA Data
+query GetSLAMetrics {
+  gold_sla_performances(first: 10) {
+    items {
+      carrier_id
+      ontime_shipments
+      late_shipments
+      ontime_percentage
+    }
+  }
+}
+
+# Query 21: All SLA Fields
+query GetCompleteSLAData {
+  gold_sla_performances(first: 100) {
+    items {
+      carrier_id
+      ontime_shipments
+      late_shipments
+      total_shipments
+      ontime_percentage
+      avg_delay_hours
+    }
+  }
+}
+
+# Query 22: SLA by Carrier
+query GetFedExSLA {
+  gold_sla_performances(
+    first: 20
+    filter: { carrier_id: { eq: "CARRIER-FEDEX-GROU" } }
+  ) {
+    items {
+      carrier_id
+      ontime_shipments
+      late_shipments
+      ontime_percentage
+    }
+  }
+}
+
+# Query 23: Carriers with Good SLA - > 90% on-time
+query GetHighPerformanceCarriers {
+  gold_sla_performances(
+    first: 50
+    filter: {
+      ontime_percentage: { gt: 90 }
+    }
+  ) {
+    items {
+      carrier_id
+      ontime_percentage
+      total_shipments
+    }
+  }
+}
+
+# Query 24: Carriers with Issues - < 85% on-time
+query GetUnderperformingCarriers {
+  gold_sla_performances(
+    first: 50
+    filter: {
+      ontime_percentage: { lt: 85 }
+    }
+  ) {
+    items {
+      carrier_id
+      ontime_percentage
+      late_shipments
+      avg_delay_hours
+    }
+  }
+}
+
+# ============================================================================
+# REVENUE RECOGNITION QUERIES
+# ============================================================================
+
+# Query 25: Basic Revenue Data
+query GetRevenueMetrics {
+  gold_revenue_recognition_realtimes(first: 10) {
+    items {
+      event_date
+      total_revenue
+      recognized_revenue
+      pending_revenue
+    }
+  }
+}
+
+# Query 26: All Revenue Fields
+query GetCompleteRevenueData {
+  gold_revenue_recognition_realtimes(first: 100) {
+    items {
+      event_date
+      total_revenue
+      recognized_revenue
+      pending_revenue
+      recognition_percentage
+      partner_access_scope
+    }
+  }
+}
+
+# Query 27: Revenue by Date Range
+query GetRevenueByDateRange {
+  gold_revenue_recognition_realtimes(
+    first: 60
+    filter: {
+      event_date: {
+        ge: "2025-01-01"
+        le: "2025-03-31"
+      }
+    }
+  ) {
+    items {
+      event_date
+      total_revenue
+      recognized_revenue
+      pending_revenue
+      recognition_percentage
+    }
+  }
+}
+
+# Query 28: Recent Revenue - Last 30 days
+# Note: Update the date filter to current month
+query GetRecentRevenue {
+  gold_revenue_recognition_realtimes(
+    first: 30
+    filter: {
+      event_date: { ge: "2025-01-01" }  # Update to current year
+    }
+  ) {
+    items {
+      event_date
+      total_revenue
+      recognized_revenue
+    }
+  }
+}
+
+# Query 29: High Pending Revenue - > $5,000
+query GetHighPendingRevenue {
+  gold_revenue_recognition_realtimes(
+    first: 50
+    filter: {
+      pending_revenue: { gt: 5000 }
+    }
+  ) {
+    items {
+      event_date
+      total_revenue
+      pending_revenue
+      recognition_percentage
+    }
+  }
+}
+
+# ============================================================================
+# ADVANCED PATTERNS
+# ============================================================================
+
+# Query 30: Complex Multi-Field Filter
+query GetComplexFilter {
+  gold_shipments_in_transits(
+    first: 100
+    filter: {
+      and: [
+        {
+          or: [
+            { carrier_id: { eq: "CARRIER-FEDEX-GROU" } }
+            { carrier_id: { eq: "CARRIER-UPS" } }
+          ]
+        }
+        { status: { ne: "CANCELLED" } }
+        { ship_date: { ge: "2025-01-01" } }
+      ]
+    }
+  ) {
+    items {
+      shipment_number
+      carrier_id
+      status
+      ship_date
+    }
+  }
+}
+
+# Query 31: String Contains Filter
+query GetACMECustomers {
+  gold_shipments_in_transits(
+    first: 100
+    filter: {
+      customer_name: { contains: "ACME" }
+    }
+  ) {
+    items {
+      shipment_number
+      customer_name
+      carrier_id
+    }
+  }
+}
+
+# Query 32: String Starts With Filter
+query GetShipmentsByPrefix {
+  gold_shipments_in_transits(
+    first: 100
+    filter: {
+      shipment_number: { startsWith: "SHP" }
+    }
+  ) {
+    items {
+      shipment_number
+      carrier_id
+    }
+  }
+}
+
+# Query 33: NOT Filter - Exclude specific value
+query GetNonCancelledShipments {
+  gold_shipments_in_transits(
+    first: 100
+    filter: {
+      not: { status: { eq: "CANCELLED" } }
+    }
+  ) {
+    items {
+      shipment_number
+      status
+    }
+  }
+}
+
+# Query 34: Multiple Entity Types in One Request
+# Note: GraphQL allows querying multiple root fields
+query GetDashboardData {
+  shipments: gold_shipments_in_transits(first: 10) {
+    items {
+      shipment_number
+      status
+    }
+  }
+  
+  orders: gold_orders_daily_summaries(first: 10) {
+    items {
+      order_date
+      total_revenue
+    }
+  }
+  
+  sla: gold_sla_performances(first: 5) {
+    items {
+      carrier_id
+      ontime_percentage
+    }
+  }
+}
+
+# Query 35: Full Pagination Example
+query GetAllDataWithPagination {
+  gold_shipments_in_transits(first: 100) {
+    items {
+      shipment_number
+      carrier_id
+      status
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# ============================================================================
+# SCHEMA INTROSPECTION (for development/debugging)
+# ============================================================================
+
+# Query 36: Get Available Types
+query GetSchemaTypes {
+  __schema {
+    queryType {
+      name
+      fields {
+        name
+        description
+      }
+    }
+  }
+}
+
+# Query 37: Get Type Details
+query GetShipmentType {
+  __type(name: "Shipment") {
+    name
+    fields {
+      name
+      type {
+        name
+        kind
+      }
+    }
+  }
+}
+
+# ============================================================================
+# WORKSHOP EXERCISES
+# ============================================================================
+
+# Exercise Query 1: Get shipments for specific carrier with status filter
+query Exercise1_FilteredShipments {
+  gold_shipments_in_transits(
+    first: 20
+    filter: {
+      and: [
+        { carrier_id: { eq: "CARRIER-FEDEX-GROU" } }
+        { status: { eq: "IN_TRANSIT" } }
+      ]
+    }
+  ) {
+    items {
+      shipment_number
+      carrier_id
+      status
+      estimated_delivery_date
+    }
+  }
+}
+
+# Exercise Query 2: Calculate metrics from orders
+query Exercise2_OrderMetrics {
+  gold_orders_daily_summaries(
+    first: 30
+    filter: {
+      order_date: { ge: "2025-01-01" }
+    }
+  ) {
+    items {
+      order_date
+      total_orders
+      total_revenue
+      avg_order_value
+    }
+  }
+}
+
+# Exercise Query 3: Warehouse performance comparison
+query Exercise3_WarehouseComparison {
+  gold_warehouse_productivity_dailies(
+    first: 50
+    filter: {
+      productivity_date: { ge: "2025-01-01" }
+    }
+    orderBy: { fulfillment_rate: DESC }
+  ) {
+    items {
+      warehouse_id
+      productivity_date
+      fulfillment_rate
+      total_shipments
+    }
+  }
+}
+
+# Exercise Query 4: Carrier SLA ranking
+query Exercise4_CarrierSLARanking {
+  gold_sla_performances(
+    first: 100
+    orderBy: { ontime_percentage: DESC }
+  ) {
+    items {
+      carrier_id
+      ontime_percentage
+      total_shipments
+      avg_delay_hours
+    }
+  }
+}
+
+# Exercise Query 5: Revenue trend analysis
+query Exercise5_RevenueTrend {
+  gold_revenue_recognition_realtimes(
+    first: 90
+    filter: {
+      event_date: {
+        ge: "2025-01-01"
+        le: "2025-03-31"
+      }
+    }
+    orderBy: { event_date: ASC }
+  ) {
+    items {
+      event_date
+      total_revenue
+      recognized_revenue
+      pending_revenue
+      recognition_percentage
+    }
+  }
+}
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# 1. All queries use POST method with this request format:
+#    {
+#      "query": "query { ... }"
+#    }
+#
+# 2. Authentication header required:
+#    Authorization: Bearer <token>
+#
+# 3. Token scope must be:
+#    https://analysis.windows.net/powerbi/api
+#
+# 4. Base URL:
+#    https://apim-3pl-flt.azure-api.net/graphql
+#    or specific endpoints:
+#    /shipments, /orders, /warehouse-productivity, /sla-performance, /revenue
+#
+# 5. Table naming convention:
+#    Fabric automatically pluralizes table names in GraphQL
+#    Example: gold_orders_daily_summary → gold_orders_daily_summaries
+#
+# 6. Row-Level Security (RLS):
+#    All queries automatically filter by partner_access_scope
+#    based on the authenticated Service Principal's Object ID
+#
+# ============================================================================
+# END OF FILE
+# ============================================================================
