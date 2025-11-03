@@ -191,3 +191,6 @@ api/scripts/partner-apps-credentials.json
 # Local config
 *.local.json
 *.local.ps1
+
+# GitHub token
+scripts/.github-token

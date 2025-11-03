@@ -89,15 +89,15 @@ Write-Host "`n📋 Creating Epics and Issues..." -ForegroundColor Yellow
 
 # Epic 1: OneLake Security - Row-Level Security Enhancement
 $Epic1Body = @"
-## 🎯 Epic Overview
+## Epic Overview
 
 Enhance the Row-Level Security (RLS) implementation in OneLake to provide granular, multi-level security for SAP IDoc data.
 
 ### Roadmap Phase
-- **Phase**: Phase 1 - Security & Governance
-- **Priority**: Critical
+- Phase: Phase 1 - Security and Governance
+- Priority: Critical
 
-## 📊 Business Value
+## Business Value
 
 ### Problem Statement
 Current RLS implementation needs improvements to support more complex security scenarios and optimized performance.
@@ -109,22 +109,22 @@ Current RLS implementation needs improvements to support more complex security s
 
 ### Success Metrics
 - 100% of access properly filtered
-- < 10ms performance overhead
+- Less than 10ms performance overhead
 - 0 security breaches identified
 
-## 🛠️ Technical Scope
+## Technical Scope
 
 ### Impacted Components
-- [x] OneLake Security
-- [x] Fabric Warehouse
-- [x] GraphQL API
-- [x] Security documentation
+- OneLake Security
+- Fabric Warehouse
+- GraphQL API
+- Security documentation
 
-## 📋 Related Issues
-- Issue #1 - Audit current RLS configuration
-- Issue #2 - Design new security models
-- Issue #3 - Implement multi-level RLS
-- Issue #4 - Security testing and validation
+## Related Issues
+- Issue 1 - Audit current RLS configuration
+- Issue 2 - Design new security models
+- Issue 3 - Implement multi-level RLS
+- Issue 4 - Security testing and validation
 "@
 
 New-GitHubIssue -Title "[EPIC] OneLake Security - Row-Level Security Enhancement" -Body $Epic1Body -Labels @("epic", "component-security", "priority-critical", "roadmap") -Milestone $Milestone1.number
@@ -159,15 +159,15 @@ foreach ($Issue in $Issues) {
 
 # Epic 2: Data Model Documentation
 $Epic2Body = @"
-## 🎯 Epic Overview
+## Epic Overview
 
 Create comprehensive and professional documentation of the SAP IDoc data model to facilitate understanding and usage of the data product.
 
 ### Roadmap Phase
-- **Phase**: Phase 1 - Security & Governance
-- **Priority**: High
+- Phase: Phase 1 - Security and Governance
+- Priority: High
 
-## 📊 Business Value
+## Business Value
 
 ### Problem Statement
 The current data model lacks clear and structured documentation, making onboarding and partner usage difficult.
@@ -182,13 +182,13 @@ The current data model lacks clear and structured documentation, making onboardi
 - 50% reduction in onboarding time
 - 0 recurring questions about the model
 
-## 🛠️ Technical Scope
+## Technical Scope
 
 ### Impacted Components
-- [x] Technical documentation
-- [x] Data schemas
-- [x] ERD diagrams
-- [x] Business glossary
+- Technical documentation
+- Data schemas
+- ERD diagrams
+- Business glossary
 "@
 
 New-GitHubIssue -Title "[EPIC] Data Model Documentation" -Body $Epic2Body -Labels @("epic", "documentation", "priority-high", "roadmap") -Milestone $Milestone1.number
@@ -223,15 +223,15 @@ foreach ($Issue in $Issues2) {
 
 # Epic 3: Complete REST APIs
 $Epic3Body = @"
-## 🎯 Epic Overview
+## Epic Overview
 
 Develop complete REST APIs with CRUD operations to provide modern and standardized access to SAP IDoc data.
 
 ### Roadmap Phase
-- **Phase**: Phase 2 - Modern API Layer
-- **Priority**: Critical
+- Phase: Phase 2 - Modern API Layer
+- Priority: Critical
 
-## 📊 Business Value
+## Business Value
 
 ### Problem Statement
 Data access is currently limited to GraphQL. Partners request standard REST APIs to facilitate integration.
@@ -243,7 +243,7 @@ Data access is currently limited to GraphQL. Partners request standard REST APIs
 
 ### Success Metrics
 - 100% functional REST APIs
-- < 100ms average latency
+- Less than 100ms average latency
 - Complete OpenAPI documentation
 "@
 
@@ -251,15 +251,15 @@ New-GitHubIssue -Title "[EPIC] Complete REST APIs" -Body $Epic3Body -Labels @("e
 
 # Epic 4: API Access Materialization in Purview
 $Epic4Body = @"
-## 🎯 Epic Overview
+## Epic Overview
 
 Integrate and reference all APIs (GraphQL and REST) in Microsoft Purview for centralized governance.
 
 ### Roadmap Phase
-- **Phase**: Phase 2 - Modern API Layer
-- **Priority**: High
+- Phase: Phase 2 - Modern API Layer
+- Priority: High
 
-## 📊 Business Value
+## Business Value
 
 ### Problem Statement
 APIs are not referenced in the data catalog, limiting discoverability and governance.
@@ -274,15 +274,15 @@ New-GitHubIssue -Title "[EPIC] API Access Materialization in Purview" -Body $Epi
 
 # Epic 5: RTI Operational Agent
 $Epic5Body = @"
-## 🎯 Epic Overview
+## Epic Overview
 
 Develop an RTI (Real-Time Intelligence) agent to automate business use cases and operational analysis.
 
 ### Roadmap Phase
-- **Phase**: Phase 3 - Operational Intelligence
-- **Priority**: High
+- Phase: Phase 3 - Operational Intelligence
+- Priority: High
 
-## 📊 Business Value
+## Business Value
 
 ### Problem Statement
 Operational analyses are mostly manual, limiting reactivity and efficiency.
@@ -297,15 +297,15 @@ New-GitHubIssue -Title "[EPIC] RTI Operational Agent" -Body $Epic5Body -Labels @
 
 # Epic 6: Data Contracts in Purview
 $Epic6Body = @"
-## 🎯 Epic Overview
+## Epic Overview
 
 Implement formalized data contracts in Microsoft Purview to guarantee quality and compliance.
 
 ### Roadmap Phase
-- **Phase**: Phase 4 - Data Contracts & Advanced Governance
-- **Priority**: Critical
+- Phase: Phase 4 - Data Contracts and Advanced Governance
+- Priority: Critical
 
-## 📊 Business Value
+## Business Value
 
 ### Problem Statement
 Absence of formalized contracts to guarantee data quality and compliance.
@@ -318,6 +318,6 @@ Absence of formalized contracts to guarantee data quality and compliance.
 
 New-GitHubIssue -Title "[EPIC] Data Contracts in Purview" -Body $Epic6Body -Labels @("epic", "component-purview", "priority-critical", "roadmap") -Milestone $Milestone4.number
 
-Write-Host "`n🎉 Issue creation completed!" -ForegroundColor Green
-Write-Host "📊 Access your GitHub project to see all created issues." -ForegroundColor Cyan
-Write-Host "🔗 https://github.com/$Owner/$Repository/issues" -ForegroundColor Blue
+Write-Host "`n[COMPLETE] Issue creation completed!" -ForegroundColor Green
+Write-Host "[INFO] Access your GitHub project to see all created issues." -ForegroundColor Cyan
+Write-Host "[LINK] https://github.com/$Owner/$Repository/issues" -ForegroundColor Blue
