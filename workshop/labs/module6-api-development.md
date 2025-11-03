@@ -481,7 +481,8 @@ echo $TOKEN
 **Using PowerShell:**
 
 ```powershell
-# Login as Service Principal
+# Login as Service Principal (FedEx demo credentials for workshop)
+# Note: These are documented workshop credentials, not production secrets
 az login --service-principal `
   -u 94a9edcc-7a22-4d89-b001-799e8414711a `
   -p <SECRET> `
@@ -504,6 +505,9 @@ Write-Host "Token: $($token.Substring(0,20))..."
 ### 4.3 Service Principal Setup
 
 **Our 3PL Partners:**
+
+> **Note**: These are documented workshop credentials for the demo environment.
+> In production, use your own Service Principal credentials.
 
 | Partner | Type | App ID | Object ID (for RLS) |
 |---------|------|--------|---------------------|

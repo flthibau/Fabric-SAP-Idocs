@@ -207,11 +207,12 @@ query GetOrdersByDateRange {
 }
 
 # Query 12: Recent Orders - Last 30 days
+# Note: Update the date filter to current month
 query GetRecentOrders {
   gold_orders_daily_summaries(
     first: 30
     filter: {
-      order_date: { ge: "2025-10-01" }
+      order_date: { ge: "2025-01-01" }  # Update to current year
     }
   ) {
     items {
@@ -469,11 +470,12 @@ query GetRevenueByDateRange {
 }
 
 # Query 28: Recent Revenue - Last 30 days
+# Note: Update the date filter to current month
 query GetRecentRevenue {
   gold_revenue_recognition_realtimes(
     first: 30
     filter: {
-      event_date: { ge: "2025-10-01" }
+      event_date: { ge: "2025-01-01" }  # Update to current year
     }
   ) {
     items {
