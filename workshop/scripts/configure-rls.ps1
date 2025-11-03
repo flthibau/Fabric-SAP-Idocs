@@ -156,7 +156,6 @@ function New-PartnerServicePrincipal {
         Write-ColorOutput "      Object ID: $($sp.objectId)" -Color 'Gray'
         
         # Create client secret (valid for 12 months)
-        $endDate = (Get-Date).AddMonths(12).ToString("yyyy-MM-ddTHH:mm:ssZ")
         $secret = az ad app credential reset --id $app.appId --years 1 --query "password" -o tsv 2>$null
         
         if (-not $secret) {

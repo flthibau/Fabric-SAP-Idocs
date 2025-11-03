@@ -157,7 +157,11 @@ We've provided a PowerShell script to automate Service Principal creation.
 **Navigate to the scripts directory:**
 
 ```powershell
-cd /home/runner/work/Fabric-SAP-Idocs/Fabric-SAP-Idocs/workshop/scripts
+# From the workshop directory
+cd scripts
+
+# Or from the repository root
+cd workshop/scripts
 ```
 
 **Run the configuration script:**
@@ -519,7 +523,7 @@ Combine conditions with AND/OR logic:
 ```dax
 -- Warehouse can see their facility AND shipments for their customers
 [warehouse_partner_id] = "PARTNER_WH003" 
-|| [destination_warehouse_id] = "WH-EAST-001"
+| [destination_warehouse_id] = "WH-EAST-001"
 ```
 
 ### Pattern 3: Dynamic Partner Mapping

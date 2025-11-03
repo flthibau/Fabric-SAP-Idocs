@@ -118,11 +118,14 @@ TOKEN=$(az account get-access-token \
   --resource https://api.fabric.microsoft.com \
   --query accessToken -o tsv)
 
-# Execute GraphQL query
+# Execute GraphQL query (compact format for curl)
 curl -X POST https://<your-graphql-endpoint>/graphql \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"query":"query { gold_shipments_in_transits(first:10) { items { carrier_id shipment_number } } }"}'
+
+# Note: The query above is the same as the formatted GraphQL query above,
+# but condensed to a single line for use in curl command
 ```
 
 **Expected Response:**
@@ -533,8 +536,12 @@ curl -X POST https://<your-graphql-endpoint>/graphql \
 Use the provided PowerShell script to run all tests automatically:
 
 ```powershell
-# Run all RLS tests
-cd /home/runner/work/Fabric-SAP-Idocs/Fabric-SAP-Idocs/workshop/tests
+# Navigate to the tests directory
+# From the workshop directory:
+cd tests
+
+# Or from the repository root:
+cd workshop/tests
 
 # Option 1: Run full test suite
 .\test-rls-access.ps1
