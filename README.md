@@ -574,7 +574,27 @@ Microsoft - Data & AI Specialist
 
 ---
 
-## 📌 Version History
+## �️ Roadmap & Future Development
+
+This project is actively being developed with exciting new features planned!
+
+### 🎯 Current Focus: Phase 1 - Security & Governance
+
+- 🔧 **OneLake Security RLS** - Debugging and optimization (In Progress)
+- 📚 **Data Model Documentation** - Complete technical and business documentation (Planned)
+
+### 🚀 Coming Soon
+
+- **REST APIs** - Complete CRUD APIs alongside GraphQL
+- **RTI Operational Agent** - AI-powered operational intelligence
+- **Purview Integration** - API materialization and data contracts
+- **Enhanced Governance** - Formal data contracts and quality monitoring
+
+📖 **[View Complete Roadmap](./docs/roadmap/README.md)** | [Track Progress on GitHub](https://github.com/flthibau/Fabric-SAP-Idocs/projects)
+
+---
+
+## �📌 Version History
 
 - **v1.0.0** (October 2025)
   - ✅ Complete demo application with RLS
