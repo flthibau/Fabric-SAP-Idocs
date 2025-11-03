@@ -1,0 +1,84 @@
+graph TB
+    subgraph "Data Source Layer"
+        SAP["SAP System<br/>(Simulated)"]
+        SIM["IDoc Simulator<br/>Python Application"]
+    end
+    
+    subgraph "Ingestion Layer"
+        EH["Azure Event Hubs<br/>sap-idocs"]
+        ES["Fabric Eventstream<br/>Real-time Processing"]
+    end
+    
+    subgraph "Storage & Processing Layer"
+        subgraph "Real-Time Analytics"
+            KQL["KQL Database<br/>Eventhouse<br/>Sub-second queries"]
+        end
+        
+        subgraph "Medallion Architecture"
+            BRONZE["Bronze Layer<br/>Raw IDocs<br/>Delta Lake"]
+            SILVER["Silver Layer<br/>Cleansed Data<br/>Normalized"]
+            GOLD["Gold Layer<br/>Business Dimensions<br/>Star Schema"]
+        end
+        
+        LH["Lakehouse<br/>Data Lake Storage"]
+        WH["SQL Warehouse<br/>Analytics Engine"]
+    end
+    
+    subgraph "Consumption Layer"
+        GQL["GraphQL API<br/>Flexible Queries"]
+        APIM["API Management<br/>Gateway & Security"]
+        PBI["Power BI<br/>Dashboards"]
+    end
+    
+    subgraph "Governance Layer"
+        PV["Microsoft Purview<br/>Data Catalog & Quality"]
+        RLS["OneLake Security<br/>Row-Level Security"]
+    end
+    
+    subgraph "Consumers"
+        WEBAPP["Web Applications"]
+        PARTNERS["Partner Systems"]
+        MOBILE["Mobile Apps"]
+    end
+    
+    %% Data Flow
+    SAP -->|IDoc Messages| SIM
+    SIM -->|JSON/XML| EH
+    EH -->|Stream| ES
+    
+    ES -->|Real-time| KQL
+    ES -->|Batch| LH
+    
+    LH --> BRONZE
+    BRONZE --> SILVER
+    SILVER --> GOLD
+    GOLD --> WH
+    
+    KQL --> PBI
+    WH --> GQL
+    GQL --> APIM
+    
+    APIM --> WEBAPP
+    APIM --> PARTNERS
+    APIM --> MOBILE
+    
+    %% Governance
+    PV -.->|Catalog| LH
+    PV -.->|Quality| WH
+    RLS -.->|Security| WH
+    RLS -.->|Security| GQL
+    
+    %% Styling
+    classDef sourceStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef ingestionStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef storageStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef consumptionStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef governanceStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef consumerStyle fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    
+    class SAP,SIM sourceStyle
+    class EH,ES ingestionStyle
+    class KQL,BRONZE,SILVER,GOLD,LH,WH storageStyle
+    class GQL,APIM,PBI consumptionStyle
+    class PV,RLS governanceStyle
+    class WEBAPP,PARTNERS,MOBILE consumerStyle
