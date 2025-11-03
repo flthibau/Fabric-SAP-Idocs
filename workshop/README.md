@@ -445,9 +445,8 @@ This workshop is provided as-is for educational purposes.
 
 For questions or support:
 
-- 📧 Email: [Your contact]
-- 💼 LinkedIn: [Your LinkedIn]
 - 🐛 Issues: [GitHub Issues](https://github.com/flthibau/Fabric-SAP-Idocs/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/flthibau/Fabric-SAP-Idocs/discussions)
 
 ---
 
